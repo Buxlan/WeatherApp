@@ -39,4 +39,8 @@ struct CityManager {
         return true
     }
     
+    
+    
+    
+    
 }

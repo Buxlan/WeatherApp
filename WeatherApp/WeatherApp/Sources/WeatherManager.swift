@@ -42,7 +42,7 @@ class WeatherManager: NSObject {
             if let data = data {
                 let decoder = JSONDecoder()
                 do {
-                    let currentWeather = try decoder.decode(CurrentWeatherData.self, from: data)
+                    let currentWeather = try decoder.decode(CurrentWeather.self, from: data)
                 } catch let DecodingError.dataCorrupted(context) {
                     print(context)
                 } catch let DecodingError.keyNotFound(key, context) {

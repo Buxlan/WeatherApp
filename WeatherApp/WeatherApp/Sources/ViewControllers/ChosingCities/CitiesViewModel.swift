@@ -39,9 +39,6 @@ class CitiesViewModel {
             guard let self = self else {
                 return
             }
-            CoreDataManager.instance.mainObjectContext.performAndWait {
-                self.prepareCitiesIfNeeded()
-            }
             let context = CoreDataManager.instance.privateObjectContext
             context.performAndWait {
                 let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "City")
@@ -55,7 +52,7 @@ class CitiesViewModel {
                     fetchRequest.predicate = nil
                 }
                 do {
-                    guard let results = try CoreDataManager.instance.mainObjectContext.fetch(fetchRequest) as? [Item] else {
+                    guard let results = try CoreDataManager.instance.mainObjectContext.fetch(fetchRequest) as? [City] else {
                         return
                     }
                     self.items = results
@@ -66,20 +63,7 @@ class CitiesViewModel {
             
         }
     }
-    
-    @discardableResult
-    private func prepareCitiesIfNeeded() -> Bool {
-        var isOk = true
-        // Load cities
-        if !AppController.shared.areCitiesLoaded {
-            isOk = CityManager.initCitiesFromFile()
-            if isOk {
-                AppController.shared.areCitiesLoaded = true
-            }
-        }
-        return isOk
-    }
-    
+        
     func item(at indexPath: IndexPath) -> Item {
         if indexPath.row > itemsCount {
             return Item()

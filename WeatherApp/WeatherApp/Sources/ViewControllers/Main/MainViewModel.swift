@@ -10,49 +10,72 @@ import CoreData
 
 class MainViewModel {
     
-    typealias Item = City
+    typealias Item = ChoosedCity
     
-    var updateAction: (() -> Void)? {
+    weak var delegate: NSFetchedResultsControllerDelegate? {
         didSet {
-            updateItems()
+            fetchResultsController.delegate = delegate
         }
     }
     
-    private var items: [City] {
-        didSet {
-            updateAction?()
-            WeatherManager.shared.updateWeather(cities: items)
-        }
-    }
+    private lazy var fetchResultsController: NSFetchedResultsController<NSFetchRequestResult> = {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "ChoosedCity")
+        let sortDescriptor = NSSortDescriptor(key: "coty.name", ascending: true)
+        fetchRequest.sortDescriptors = [sortDescriptor]
+//        let predicate = NSPredicate(format: "%K == %@", "order", order)
+//        fetchRequest.predicate = predicate
+        let context = CoreDataManager.instance.privateObjectContext
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+                                                                  managedObjectContext: context,
+                                                                  sectionNameKeyPath: nil,
+                                                                  cacheName: nil)        
+        return fetchedResultsController
+    }()
     
-    init() {
-        items = [City]()
-    }
-    
-    func updateItems() {
+    func update(with condition: Condition? = nil) {
         DispatchQueue.global(qos: .userInteractive).async { [weak self] in
             guard let self = self else {
                 return
             }
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "City")
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-            fetchRequest.predicate = NSPredicate(format: "selected == YES")
-            do {
-                guard let results = try CoreDataManager.instance.mainObjectContext.fetch(fetchRequest) as? [Item] else {
-                    return
+            CoreDataManager.instance.mainObjectContext.performAndWait {
+                self.prepareCitiesIfNeeded()
+            }
+            let context = CoreDataManager.instance.privateObjectContext
+            context.perform {
+                do {
+                    try self.fetchResultsController.performFetch()
+                } catch {
+                    print(error)
                 }
-                self.items = results
-            } catch {
-                print(error)
+            }
+            
+        }
+    }
+    
+    @discardableResult
+    private func prepareCitiesIfNeeded() -> Bool {
+        var isOk = true
+        // Load cities
+        if !AppController.shared.areCitiesLoaded {
+            isOk = CityManager.initCitiesFromFile()
+            if isOk {
+                AppController.shared.areCitiesLoaded = true
             }
         }
-    }    
+        return isOk
+    }
     
     func item(at indexPath: IndexPath) -> Item {
-        return items[indexPath.row]
+        if let item = fetchResultsController.object(at: indexPath) as? Item {
+            return item
+        }
+        return Item()
     }
     
     var itemsCount: Int {
-        items.count
-    }    
+        if let count = fetchResultsController.sections?[0].numberOfObjects {
+            return count
+        }
+        return 0
+    }
 }

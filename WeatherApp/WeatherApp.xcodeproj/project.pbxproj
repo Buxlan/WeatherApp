@@ -10,13 +10,14 @@
 		4007753126FA59D700F7E13F /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 4007753026FA59D700F7E13F /* .swiftlint.yml */; };
 		4007753426FA59DF00F7E13F /* swiftgen.yml in Resources */ = {isa = PBXBuildFile; fileRef = 4007753326FA59DF00F7E13F /* swiftgen.yml */; };
 		404BA66526FA79C00084525B /* city.list.json in Resources */ = {isa = PBXBuildFile; fileRef = 404BA66426FA79C00084525B /* city.list.json */; };
+		404E89B126FD3AB00012443E /* ChoosedCity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 404E89B026FD3AB00012443E /* ChoosedCity.swift */; };
 		4069A11726FAB06A00ECBFD3 /* Assets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A11626FAB06A00ECBFD3 /* Assets.swift */; };
 		4069A12226FAB28A00ECBFD3 /* ChoosingCitiesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4069A12126FAB28A00ECBFD3 /* ChoosingCitiesView.xib */; };
 		4069A12526FAB5BF00ECBFD3 /* SubtitleTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A12426FAB5BF00ECBFD3 /* SubtitleTableViewCell.swift */; };
 		4069A12C26FACA2B00ECBFD3 /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A12B26FACA2B00ECBFD3 /* MainViewModel.swift */; };
 		4069A15226FAD87200ECBFD3 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A15126FAD87200ECBFD3 /* AppController.swift */; };
 		4069A15526FADC8500ECBFD3 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A15426FADC8500ECBFD3 /* WeatherManager.swift */; };
-		4069A15826FAE22E00ECBFD3 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A15726FAE22E00ECBFD3 /* WeatherData.swift */; };
+		4069A15826FAE22E00ECBFD3 /* CurrentWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4069A15726FAE22E00ECBFD3 /* CurrentWeather.swift */; };
 		408CED6F26FBCDF2007B0621 /* SearchResultsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408CED6E26FBCDF2007B0621 /* SearchResultsViewController.swift */; };
 		409353AB26FA9D0E00FE001A /* ChoosingCitiesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409353A926FA9D0E00FE001A /* ChoosingCitiesViewController.swift */; };
 		409353B126FA9D3000FE001A /* CitiesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409353B026FA9D3000FE001A /* CitiesViewModel.swift */; };
@@ -39,13 +40,14 @@
 		4007753026FA59D700F7E13F /* .swiftlint.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		4007753326FA59DF00F7E13F /* swiftgen.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = swiftgen.yml; sourceTree = SOURCE_ROOT; };
 		404BA66426FA79C00084525B /* city.list.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = city.list.json; sourceTree = "<group>"; };
+		404E89B026FD3AB00012443E /* ChoosedCity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoosedCity.swift; sourceTree = "<group>"; };
 		4069A11626FAB06A00ECBFD3 /* Assets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Assets.swift; sourceTree = "<group>"; };
 		4069A12126FAB28A00ECBFD3 /* ChoosingCitiesView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChoosingCitiesView.xib; sourceTree = "<group>"; };
 		4069A12426FAB5BF00ECBFD3 /* SubtitleTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubtitleTableViewCell.swift; sourceTree = "<group>"; };
 		4069A12B26FACA2B00ECBFD3 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		4069A15126FAD87200ECBFD3 /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
 		4069A15426FADC8500ECBFD3 /* WeatherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherManager.swift; sourceTree = "<group>"; };
-		4069A15726FAE22E00ECBFD3 /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
+		4069A15726FAE22E00ECBFD3 /* CurrentWeather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentWeather.swift; sourceTree = "<group>"; };
 		408CED6E26FBCDF2007B0621 /* SearchResultsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsViewController.swift; sourceTree = "<group>"; };
 		409353A926FA9D0E00FE001A /* ChoosingCitiesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoosingCitiesViewController.swift; sourceTree = "<group>"; };
 		409353B026FA9D3000FE001A /* CitiesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitiesViewModel.swift; sourceTree = "<group>"; };
@@ -113,7 +115,8 @@
 			isa = PBXGroup;
 			children = (
 				40AB2BBA26FA737E00205981 /* City.swift */,
-				4069A15726FAE22E00ECBFD3 /* WeatherData.swift */,
+				404E89B026FD3AB00012443E /* ChoosedCity.swift */,
+				4069A15726FAE22E00ECBFD3 /* CurrentWeather.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -340,10 +343,11 @@
 				40E93E9626FA567700783ECC /* AppDelegate.swift in Sources */,
 				409353AB26FA9D0E00FE001A /* ChoosingCitiesViewController.swift in Sources */,
 				40E93E9826FA567700783ECC /* SceneDelegate.swift in Sources */,
-				4069A15826FAE22E00ECBFD3 /* WeatherData.swift in Sources */,
+				4069A15826FAE22E00ECBFD3 /* CurrentWeather.swift in Sources */,
 				4069A12526FAB5BF00ECBFD3 /* SubtitleTableViewCell.swift in Sources */,
 				40CB0EEA26FA7CCD0030324C /* CoreDataManager.swift in Sources */,
 				4069A15526FADC8500ECBFD3 /* WeatherManager.swift in Sources */,
+				404E89B126FD3AB00012443E /* ChoosedCity.swift in Sources */,
 				40AB2BBB26FA737E00205981 /* City.swift in Sources */,
 				4069A15226FAD87200ECBFD3 /* AppController.swift in Sources */,
 			);

@@ -6,11 +6,18 @@
 //
 
 import UIKit
+import Foundation
+import CoreData
+
+protocol Observer {
+    func notify()
+}
 
 class MainViewController: UIViewController {
     
     // MARK: - Properties
-    private var viewModel = CitiesViewModel(with: .bool(true))
+    typealias Item = ChoosedCity
+    private var viewModel = MainViewModel()
             
     private lazy var tableView: UITableView = {
         let view = UITableView(frame: .zero, style: .plain)
@@ -62,12 +69,7 @@ class MainViewController: UIViewController {
     // MARK: Init
     override func viewDidLoad() {
         super.viewDidLoad()
-        viewModel.updateAction = { [weak self] in
-            DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
-                self?.spinner.stopAnimating()
-            }            
-        }        
+        viewModel.delegate = self
         viewModel.update()
         configureUI()
     }
@@ -145,8 +147,8 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         let item = viewModel.item(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         cell.prepareForReuse()
-        cell.textLabel?.text = item.name
-        cell.detailTextLabel?.text = "Id: \(item.id)"        
+        cell.textLabel?.text = item.city.name
+        cell.detailTextLabel?.text = "Id: \(item.city.id)"
         return cell
     }
         
@@ -175,4 +177,55 @@ extension MainViewController {
             }
         }
     }
+}
+
+extension MainViewController: Observer {
+    func notify() {
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
+            self?.spinner.stopAnimating()
+        }
+    }
+}
+
+extension MainViewController: NSFetchedResultsControllerDelegate {
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.beginUpdates()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                tableView.insertRows(at: [indexPath], with: .automatic)
+            }
+        case .update:
+            if let indexPath = indexPath {
+                let item = viewModel.item(at: indexPath)
+                let cell = tableView.cellForRow(at: indexPath)!
+                let name = item.city.name
+                cell.textLabel?.text = name
+            }
+        case .move:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+            if let newIndexPath = newIndexPath {
+                tableView.insertRows(at: [newIndexPath], with: .automatic)
+            }
+        case .delete:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+        @unknown default:
+            fatalError()
+        }
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.endUpdates()
+    }
+    
 }
