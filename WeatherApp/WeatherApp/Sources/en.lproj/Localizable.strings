@@ -1,0 +1,10 @@
+/* 
+  Localizable.strings
+  WeatherApp
+
+  Created by  Buxlan on 9/21/21.
+  
+*/
+"Screens.mainTitle" = "Your cities";
+"Screens.choosingCitiesTitle" = "Choose your cities";
+"Buttons.addCities" = "Add more cities";
