@@ -17,66 +17,95 @@ enum Condition {
 class CitiesViewModel {
     
     typealias Item = City
-    var condition: Condition = .none
+    
+    private var fitler: String = ""
+    
+    weak var delegate: NSFetchedResultsControllerDelegate? {
+        didSet {
+            fetchResultsController.delegate = delegate
+        }
+    }
     var updateAction: (() -> Void)?
     
-    private var items: [City] {
-        didSet {
-            updateAction?()
+    private lazy var fetchResultsController: NSFetchedResultsController<Item> = {
+        let fetchRequest = City.prepareFetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
+        fetchRequest.sortDescriptors = [sortDescriptor]
+//        let predicate = NSPredicate(format: "%K == %@", "order", order)
+//        fetchRequest.predicate = predicate
+        let context = CoreDataManager.instance.mainObjectContext
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+                                                                  managedObjectContext: context,
+                                                                  sectionNameKeyPath: nil,
+                                                                  cacheName: nil)
+        return fetchedResultsController
+    }()
+    
+    func update(filter: String = "") {
+        if filter.isEmpty {
+            fetchResultsController.fetchRequest.predicate = nil
+        } else {
+            let predicate = NSPredicate(format: "name CONTAINS[cd] %@", filter)
+            fetchResultsController.fetchRequest.predicate = predicate
+        }
+        do {
+            try self.fetchResultsController.performFetch()
+            self.updateAction?()
+        } catch {
+            print(error)
         }
     }
     
-    init(with condition: Condition = .none) {
-        items = [City]()
-        self.condition = condition
-    }
-    
-    func update(with condition: Condition? = nil) {
-        if let condition = condition {
-            self.condition = condition
-        }
-        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-            guard let self = self else {
-                return
-            }
-            let context = CoreDataManager.instance.privateObjectContext
-            context.performAndWait {
-                let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "City")
-                fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-                switch self.condition {
-                case .bool(let value):
-                    fetchRequest.predicate = NSPredicate(format: "selected == %@", NSNumber(value: value))
-                case .string(let value):
-                    fetchRequest.predicate = NSPredicate(format: "name CONTAINS[cd] %@", NSString(string: value))
-                case .none:
-                    fetchRequest.predicate = nil
-                }
-                do {
-                    guard let results = try CoreDataManager.instance.mainObjectContext.fetch(fetchRequest) as? [City] else {
-                        return
-                    }
-                    self.items = results
-                } catch {
-                    print(error)
-                }
-            }
-            
-        }
-    }
-        
     func item(at indexPath: IndexPath) -> Item {
-        if indexPath.row > itemsCount {
-            return Item()
-        }
-        return items[indexPath.row]
+        return fetchResultsController.object(at: indexPath)
     }
     
     var itemsCount: Int {
-        items.count
+        if let count = fetchResultsController.sections?[0].numberOfObjects {
+            return count
+        }
+        return 0
     }
     
     func selectItem(at indexPath: IndexPath) {
-        let item = items[indexPath.row]
-        item.setSelected(value: !item.selected)
+        let item = self.item(at: indexPath)
+        let manager = CoreDataManager.instance
+        let mainContext = manager.mainObjectContext
+        let privateContext = manager.privateObjectContext
+        if let selected = item.selected {
+            mainContext.delete(selected)
+            item.selected = nil
+        } else {
+            let choosedCity = ChoosedCity(insertInto: mainContext)
+            item.selected = choosedCity
+            mainContext.perform {
+                do {
+                    try mainContext.save()
+                    if let selectedNew = try privateContext.existingObject(with: choosedCity.objectID) as? ChoosedCity {
+                        WeatherManager.shared.updateCurrentWeather(at: selectedNew, in: privateContext)
+                    }
+                } catch {
+                    print("error saving")
+                }
+            }
+        }
     }
+    
+    func save() {
+        CoreDataManager.instance.save(CoreDataManager.instance.mainObjectContext)
+    }
+    
+//    func prepareFetchResultsController() -> NSFetchedResultsController<Item> {
+//        let fetchRequest = City.fetchRequest(filter: self.fitler)
+//        let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
+//        fetchRequest.sortDescriptors = [sortDescriptor]
+////        let predicate = NSPredicate(format: "%K == %@", "order", order)
+////        fetchRequest.predicate = predicate
+//        let context = CoreDataManager.instance.privateObjectContext
+//        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+//                                                                  managedObjectContext: context,
+//                                                                  sectionNameKeyPath: nil,
+//                                                                  cacheName: nil)
+//        return fetchedResultsController
+//    }
 }

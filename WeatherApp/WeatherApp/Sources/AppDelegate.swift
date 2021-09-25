@@ -15,6 +15,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        WeatherManager.shared.updateWeather()
         return true
     }
 
@@ -79,7 +80,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-        CoreDataManager.instance.saveContext()
+        CoreDataManager.instance.save(CoreDataManager.instance.privateObjectContext)
+        CoreDataManager.instance.save(CoreDataManager.instance.mainObjectContext)
     }
 
 }

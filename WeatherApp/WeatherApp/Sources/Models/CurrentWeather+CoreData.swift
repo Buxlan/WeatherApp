@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 
+@objc(CurrentWeather)
 class CurrentWeather: NSManagedObject, Decodable {
     
     enum CodingKeys: CodingKey {
@@ -22,8 +23,16 @@ class CurrentWeather: NSManagedObject, Decodable {
         case tempMax = "temp_max"
     }
     
+    @NSManaged var city: City?
+    @NSManaged var choosedCity: ChoosedCity?
     @NSManaged var temp: Float
     
+    convenience init(insertInto context: NSManagedObjectContext?) {
+        let manager = CoreDataManager.instance
+        self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
+                  insertInto: context)
+    }
+        
     convenience init() {
         let manager = CoreDataManager.instance
         self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
@@ -43,5 +52,12 @@ class CurrentWeather: NSManagedObject, Decodable {
         let main = try data.nestedContainer(keyedBy: MainSectionCodingKeys.self, forKey: .main)
         self.temp = try main.decode(Float.self, forKey: .temp)
         print(temp)
+    }
+    
+    // MARK: Helper functions
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<CurrentWeather> {
+        let request = NSFetchRequest<CurrentWeather>(entityName: "CurrentWeather")
+        request.sortDescriptors = [NSSortDescriptor(key: "city.name", ascending: true)]
+        return request
     }
 }

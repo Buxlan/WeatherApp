@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 
 class ChoosingCitiesViewController: UIViewController {
 
@@ -80,32 +81,39 @@ class ChoosingCitiesViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureNavigationBar()
-        viewModel.updateAction = { [weak self] in
-            DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
-                self?.spinner.stopAnimating()
-            }
-        }
-        viewModel.update()
+        configureViewModel()
         configureUI()
         configureSearchController()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         configureNavigationBar()
+        super.viewWillAppear(animated)
     }
     
     // MARK: Helper functions
-    func configureUI() {
-        spinner.startAnimating()
+    private func configureUI() {
         view.addSubview(tableView)
         view.addSubview(spinner)
         view.addSubview(dismissButton)
         configureConstraints()
     }
     
+    private func configureViewModel() {
+        viewModel.delegate = self
+        viewModel.updateAction = { [weak self] in
+            DispatchQueue.main.async {
+                self?.spinner.startAnimating()
+                self?.tableView.reloadData()
+                self?.spinner.stopAnimating()
+            }
+        }
+        viewModel.update()
+    }
+    
     override func viewDidDisappear(_ animated: Bool) {
         dismissAction?()
+        super.viewDidDisappear(animated)
     }
         
     private func configureNavigationBar() {
@@ -125,6 +133,7 @@ class ChoosingCitiesViewController: UIViewController {
 //        searchController.searchBar.sizeToFit()
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        searchController.searchBar.delegate = self
         definesPresentationContext = true
     }
     
@@ -162,7 +171,7 @@ class ChoosingCitiesViewController: UIViewController {
     
     @objc
     private func dismissTapped() {
-        CoreDataManager.instance.saveContext()
+        viewModel.save()
         AppController.shared.isFirstLaunch = false
         navigationController?.popViewController(animated: true)
     }    
@@ -176,13 +185,13 @@ extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSour
         cell.prepareForReuse()
         cell.textLabel?.text = item.name
         cell.detailTextLabel?.text = "Id: \(item.id)"
-        cell.accessoryType = item.selected ? .checkmark : .none
+        cell.accessoryType = item.isSelected ? .checkmark : .none
         return cell
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let item = viewModel.item(at: indexPath)
-        if item.selected {
+        if item.isSelected {
             cell.setSelected(true, animated: false)
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         }
@@ -209,4 +218,69 @@ extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSour
         cell.accessoryType = cell.isSelected ? .checkmark : .none
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
+}
+
+extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate {
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        if view.window == nil { return }
+        spinner.startAnimating()
+        tableView.beginUpdates()
+    }
+    
+    // swiftlint:disable:next cyclomatic_complexity
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        
+        if view.window == nil { return }
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                tableView.insertRows(at: [indexPath], with: .automatic)
+            }
+        case .update:
+            if let indexPath = indexPath {
+                let item = viewModel.item(at: indexPath)
+                if let cell = tableView.cellForRow(at: indexPath) {
+                    let name = item.name
+                    cell.textLabel?.text = name
+                }
+            }
+        case .move:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+            if let newIndexPath = newIndexPath {
+                tableView.insertRows(at: [newIndexPath], with: .automatic)
+            }
+        case .delete:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+        @unknown default:
+            fatalError()
+        }
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        if view.window == nil { return }
+        tableView.endUpdates()
+        spinner.stopAnimating()
+    }
+    
+}
+
+extension ChoosingCitiesViewController: UISearchBarDelegate {
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.becomeFirstResponder()
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+    
 }

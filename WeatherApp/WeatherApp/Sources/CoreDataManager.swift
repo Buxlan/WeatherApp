@@ -51,39 +51,35 @@ class CoreDataManager {
     
     lazy var mainObjectContext: NSManagedObjectContext = {
         let coordinator = self.persistentStoreCoordinator
-        var managedObjectContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        managedObjectContext.persistentStoreCoordinator = coordinator
-        return managedObjectContext
+        let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        context.persistentStoreCoordinator = coordinator
+        context.automaticallyMergesChangesFromParent = true
+        return context
     }()
     
     lazy var privateObjectContext: NSManagedObjectContext = {
         let coordinator = self.persistentStoreCoordinator
-        var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-        managedObjectContext.persistentStoreCoordinator = coordinator
-        return managedObjectContext
+        let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        context.automaticallyMergesChangesFromParent = true
+        context.parent = mainObjectContext
+//        context.persistentStoreCoordinator = coordinator        
+        return context
     }()
     
     // Entity for Name
     func entityForName(entityName: String) -> NSEntityDescription {
         guard let entity = NSEntityDescription.entity(forEntityName: entityName, in: self.mainObjectContext) else {
-            fatalError("Cannot get entity City")
+            fatalError("Cannot get entity with name: \(entityName)")
         }
         return entity
     }
     
-    // MARK: - Core Data Saving support
-    func saveContext () {
-        if mainObjectContext.hasChanges {
+    // MARK: - Core Data Saving support   
+    func save(_ context: NSManagedObjectContext) {
+        if !context.hasChanges { return }
+        context.perform {
             do {
-                try mainObjectContext.save()
-            } catch {
-                let nserror = error as NSError
-                NSLog("Unresolved error \(nserror), \(nserror.userInfo)")                
-            }
-        }
-        if privateObjectContext.hasChanges {
-            do {
-                try privateObjectContext.save()
+                try context.save()
             } catch {
                 let nserror = error as NSError
                 NSLog("Unresolved error \(nserror), \(nserror.userInfo)")

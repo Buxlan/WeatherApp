@@ -15,16 +15,18 @@ class MainViewModel {
     weak var delegate: NSFetchedResultsControllerDelegate? {
         didSet {
             fetchResultsController.delegate = delegate
+            WeatherManager.shared.addObserver(self)
         }
     }
+    var updateAction: (() -> Void)?
     
-    private lazy var fetchResultsController: NSFetchedResultsController<NSFetchRequestResult> = {
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "ChoosedCity")
-        let sortDescriptor = NSSortDescriptor(key: "coty.name", ascending: true)
+    private lazy var fetchResultsController: NSFetchedResultsController<Item> = {
+        let fetchRequest = ChoosedCity.prepareFetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "city.name", ascending: true)
         fetchRequest.sortDescriptors = [sortDescriptor]
 //        let predicate = NSPredicate(format: "%K == %@", "order", order)
 //        fetchRequest.predicate = predicate
-        let context = CoreDataManager.instance.privateObjectContext
+        let context = CoreDataManager.instance.mainObjectContext
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
                                                                   managedObjectContext: context,
                                                                   sectionNameKeyPath: nil,
@@ -33,43 +35,29 @@ class MainViewModel {
     }()
     
     func update(with condition: Condition? = nil) {
-        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-            guard let self = self else {
-                return
+        let context = fetchResultsController.managedObjectContext
+        self.prepareCitiesIfNeeded()
+        context.perform {
+            do {
+                try self.fetchResultsController.performFetch()
+                self.updateAction?()
+            } catch {
+                print(error)
             }
-            CoreDataManager.instance.mainObjectContext.performAndWait {
-                self.prepareCitiesIfNeeded()
-            }
-            let context = CoreDataManager.instance.privateObjectContext
-            context.perform {
-                do {
-                    try self.fetchResultsController.performFetch()
-                } catch {
-                    print(error)
-                }
-            }
-            
         }
     }
     
-    @discardableResult
-    private func prepareCitiesIfNeeded() -> Bool {
-        var isOk = true
-        // Load cities
-        if !AppController.shared.areCitiesLoaded {
-            isOk = CityManager.initCitiesFromFile()
-            if isOk {
-                AppController.shared.areCitiesLoaded = true
+    private func prepareCitiesIfNeeded() {
+        DispatchQueue.global(qos: .userInteractive).async {
+            if !AppController.shared.areCitiesLoaded {
+                CityManager.initCitiesFromFile()
+                self.update()
             }
         }
-        return isOk
     }
     
     func item(at indexPath: IndexPath) -> Item {
-        if let item = fetchResultsController.object(at: indexPath) as? Item {
-            return item
-        }
-        return Item()
+        return fetchResultsController.object(at: indexPath)
     }
     
     var itemsCount: Int {
@@ -78,4 +66,16 @@ class MainViewModel {
         }
         return 0
     }
+    
+    deinit {
+        WeatherManager.shared.removeObserver(self)
+    }
+}
+
+extension MainViewModel: Observer {
+    
+    func notify() {
+        self.update()
+    }
+    
 }

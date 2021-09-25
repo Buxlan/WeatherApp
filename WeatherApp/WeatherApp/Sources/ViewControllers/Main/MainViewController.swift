@@ -9,8 +9,8 @@ import UIKit
 import Foundation
 import CoreData
 
-protocol Observer {
-    func notify()
+protocol Observer: class {
+    func notify()    
 }
 
 class MainViewController: UIViewController {
@@ -32,7 +32,7 @@ class MainViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.rowHeight = UITableView.automaticDimension
         view.estimatedRowHeight = UITableView.automaticDimension
-        view.register(SubtitleTableViewCell.self,
+        view.register(MainViewTableCell.self,
                       forCellReuseIdentifier: "cell")
                       
         view.tableHeaderView = UIView()
@@ -49,7 +49,7 @@ class MainViewController: UIViewController {
         return view
     }()
     
-    private lazy var addCities: UIButton = {
+    private lazy var addCitiesButton: UIButton = {
         let height: CGFloat = 20
         let view = UIButton()
         view.setTitle(L10n.Buttons.addCities, for: .normal)
@@ -70,20 +70,28 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         viewModel.delegate = self
-        viewModel.update()
+        viewModel.updateAction = { [weak self] in
+            DispatchQueue.main.async {
+                self?.spinner.startAnimating()
+                self?.tableView.reloadData()
+                self?.spinner.stopAnimating()
+            }
+        }
+        viewModel.update()        
         configureUI()
     }
     
     override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         let appController = AppController()
         if appController.isFirstLaunch {
             sequeToChoosingCities()
-            viewModel.update()
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        configureNavigationBar()
+        super.viewWillAppear(animated)
+        configureNavigationBar()        
     }
     
     // MARK: Helper functions
@@ -91,7 +99,7 @@ class MainViewController: UIViewController {
         spinner.startAnimating()
         view.addSubview(tableView)
         view.addSubview(spinner)
-        view.addSubview(addCities)
+        view.addSubview(addCitiesButton)
         configureConstraints()
     }
     
@@ -115,8 +123,8 @@ class MainViewController: UIViewController {
             spinner.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
             
-            addCities.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
-            addCities.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24)
+            addCitiesButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
+            addCitiesButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24)
         ]
         NSLayoutConstraint.activate(constraints)
     }
@@ -146,9 +154,10 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = viewModel.item(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.prepareForReuse()
-        cell.textLabel?.text = item.city.name
-        cell.detailTextLabel?.text = "Id: \(item.city.id)"
+        cell.textLabel?.text = item.city.name        
+        if let castedCell = cell as? ConfigurableCell {
+            castedCell.configure(city: item)
+        }
         return cell
     }
         
@@ -166,36 +175,16 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     
 }
 
-extension MainViewController {
-    private func prepareToFirstLaunch() {
-        // Load cities
-        var isOk = true
-        if !AppController.shared.areCitiesLoaded {
-            isOk = CityManager.initCitiesFromFile()
-            if isOk {
-                AppController.shared.areCitiesLoaded = true
-            }
-        }
-    }
-}
-
-extension MainViewController: Observer {
-    func notify() {
-        DispatchQueue.main.async { [weak self] in
-            self?.tableView.reloadData()
-            self?.spinner.stopAnimating()
-        }
-    }
-}
-
 extension MainViewController: NSFetchedResultsControllerDelegate {
     
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        if view.window == nil { return }
         tableView.beginUpdates()
     }
     
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         
+        if view.window == nil { return }
         switch type {
         case .insert:
             if let indexPath = newIndexPath {
@@ -207,6 +196,9 @@ extension MainViewController: NSFetchedResultsControllerDelegate {
                 let cell = tableView.cellForRow(at: indexPath)!
                 let name = item.city.name
                 cell.textLabel?.text = name
+                if let castedCell = cell as? ConfigurableCell {
+                    castedCell.configure(city: item)
+                }
             }
         case .move:
             if let indexPath = indexPath {
@@ -225,7 +217,7 @@ extension MainViewController: NSFetchedResultsControllerDelegate {
     }
     
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        if view.window == nil { return }
         tableView.endUpdates()
     }
-    
 }

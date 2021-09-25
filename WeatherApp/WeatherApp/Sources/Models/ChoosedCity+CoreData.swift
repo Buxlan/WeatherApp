@@ -8,7 +8,7 @@
 import CoreData
 import CoreLocation
 
-@objc(City)
+@objc(ChoosedCity)
 class ChoosedCity: NSManagedObject {
     
     enum CodingKeys: CodingKey {
@@ -20,18 +20,28 @@ class ChoosedCity: NSManagedObject {
     }
     
     @NSManaged var city: City
-    @NSManaged var weather: CurrentWeather
+    @NSManaged var currentWeather: CurrentWeather?
         
-    convenience init() {
+    convenience init(insertInto: NSManagedObjectContext) {
         let manager = CoreDataManager.instance
         self.init(entity: manager.entityForName(entityName: "ChoosedCity"),
-                  insertInto: manager.privateObjectContext)
+                  insertInto: insertInto)
+    }
+    
+    // MARK: - Helper functions
+    @nonobjc public class func prepareFetchRequest() -> NSFetchRequest<ChoosedCity> {
+        let request = NSFetchRequest<ChoosedCity>(entityName: "ChoosedCity")
+        request.sortDescriptors = []
+        return request
     }
     
 }
 
 extension ChoosedCity {
+    var name: String {
+        return self.city.name
+    }
     var coord: CLLocationCoordinate2D {
         return self.city.coord
-    }    
+    }
 }
