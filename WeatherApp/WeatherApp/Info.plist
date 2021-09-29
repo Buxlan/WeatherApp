@@ -53,6 +53,10 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>weatherAuthKey</key>
+	<string>7097b7d0449c11e0933f4a5d2dfd47da</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Определить ваш город автоматически?</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -60,5 +64,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Позвольте?</string>
 </dict>
 </plist>

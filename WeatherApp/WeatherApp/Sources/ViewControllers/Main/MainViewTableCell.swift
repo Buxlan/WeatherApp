@@ -7,11 +7,35 @@
 
 import UIKit
 
-protocol ConfigurableCell {
-    func configure(city: ChoosedCity)
+
+
+//struct CellWeatherDataModel: DataModel {
+//    var text: String
+//    var detailText: String
+//
+//    init(city: City) {
+//        text = city.name
+//        let weather = city.currentWeather?.temp ?? 0.0
+//        detailText = "\(weather)"
+//    }
+//
+//    init(dailyWeather: DailyWeather) {
+//        let dateFormatter = DateFormatter()
+//        dateFormatter.dateFormat = "dd/MM/YY"
+//        text = dateFormatter.string(from: dailyWeather.dt)
+//        detailText = "\(dailyWeather.temp.day)"
+//    }
+//}
+
+protocol Configurable {
+    static var reuseIdentifier: String { get }
+    func configure(data: MainDataModel)
+}
+extension Configurable {
+    static var reuseIdentifier: String { String(describing: Self.self) }
 }
 
-class MainViewTableCell: UITableViewCell, ConfigurableCell {
+class MainViewTableCell: UITableViewCell, Configurable {
 //
 //    private lazy var tempLabel: UILabel = {
 //        let view = UILabel()
@@ -21,6 +45,10 @@ class MainViewTableCell: UITableViewCell, ConfigurableCell {
 //        view.textAlignment = .center
 //        return view
 //    }()
+    
+    required convenience init() {
+        self.init(style: .value1, reuseIdentifier: Self.reuseIdentifier)
+    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .value1, reuseIdentifier: reuseIdentifier)
@@ -30,8 +58,9 @@ class MainViewTableCell: UITableViewCell, ConfigurableCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(city: ChoosedCity) {
-        textLabel?.text = "\(city.name)"
-        detailTextLabel?.text = String(city.currentWeather?.temp ?? 0.0)        
+    // MARK: - Helper functions
+    func configure(data: MainDataModel) {
+        textLabel?.text = data.text
+        detailTextLabel?.text = data.detailText
     }
 }

@@ -24,15 +24,6 @@ class SearchResultsViewController: UITableViewController {
     // MARK: - Init
     init() {
         super.init(nibName: nil, bundle: nil)
-        viewModel.delegate = self
-        viewModel.updateAction = { [weak self] in
-            DispatchQueue.main.async {
-                self?.spinner.startAnimating()
-                self?.tableView.reloadData()
-                self?.spinner.stopAnimating()
-            }
-        }
-        viewModel.update()
     }
     
     required init?(coder: NSCoder) {
@@ -40,19 +31,25 @@ class SearchResultsViewController: UITableViewController {
     }
     
     override func viewDidLoad() {
-        tableView.allowsSelection = true
-        tableView.allowsMultipleSelection = true
-        tableView.register(SubtitleTableViewCell.self, forCellReuseIdentifier: "cell")
+        super.viewDidLoad()
+        configureUI()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.delegate = self
+        viewModel.update()
     }
     
     override func viewDidAppear(_ animated: Bool) {
-        addKeyboardNotificationObservers()
         super.viewDidAppear(animated)
+        addKeyboardNotificationObservers()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
-        removeKeyboardNotificationObservers()
         super.viewDidDisappear(animated)
+        viewModel.delegate = nil
+        removeKeyboardNotificationObservers()
     }
     
     // MARK: - Helper functions
@@ -62,13 +59,13 @@ class SearchResultsViewController: UITableViewController {
         cell.prepareForReuse()
         cell.textLabel?.text = item.name
         cell.detailTextLabel?.text = "Id: \(item.id)"
-        cell.accessoryType = item.isSelected ? .checkmark : .none
+        cell.accessoryType = item.isChosen ? .checkmark : .none
         return cell
     }
     
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let item = viewModel.item(at: indexPath)
-        if item.isSelected {
+        if item.isChosen {
             cell.setSelected(true, animated: false)
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         }
@@ -91,12 +88,16 @@ class SearchResultsViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         viewModel.selectItem(at: indexPath)
-//        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-//        cell.accessoryType = cell.isSelected ? .checkmark : .none
-//        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
     
-    // Keyboard handling
+    func configureUI() {
+        tableView.allowsSelection = true
+        tableView.allowsMultipleSelection = true
+        tableView.accessibilityIdentifier = "Search"
+        tableView.register(SubtitleTableViewCell.self, forCellReuseIdentifier: "cell")
+    }
+    
+    // Keyboard handling propetries
     enum KeyboardState {
         case unknown
         case entering
@@ -177,48 +178,44 @@ extension SearchResultsViewController {
 extension SearchResultsViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         let filter = searchController.searchBar.text ?? ""
-        viewModel.update(filter: filter)
+        viewModel.update(with: filter)
     }
 }
 
-extension SearchResultsViewController: NSFetchedResultsControllerDelegate {
+extension SearchResultsViewController: NSFetchedResultsControllerDelegate, Updateable {
     
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
         tableView.beginUpdates()
     }
     
-    // swiftlint:disable:next cyclomatic_complexity
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
                     didChange anObject: Any,
                     at indexPath: IndexPath?,
                     for type: NSFetchedResultsChangeType,
                     newIndexPath: IndexPath?) {
-        
-        if view.window == nil { return }
+                
         switch type {
         case .insert:
             if let indexPath = newIndexPath {
-                tableView.insertRows(at: [indexPath], with: .automatic)
+                self.tableView.insertRows(at: [indexPath], with: .automatic)
             }
         case .update:
             if let indexPath = indexPath {
-                let item = viewModel.item(at: indexPath)
-                if let cell = tableView.cellForRow(at: indexPath) {
-                    let name = item.name
-                    cell.textLabel?.text = name
+                let item = viewModel.cellModel(at: indexPath)
+                if let cell = tableView.cellForRow(at: indexPath) as? Configurable {
+                    cell.configure(data: item)
                 }
             }
         case .move:
             if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
             }
             if let newIndexPath = newIndexPath {
-                tableView.insertRows(at: [newIndexPath], with: .automatic)
+                self.tableView.insertRows(at: [newIndexPath], with: .automatic)
             }
         case .delete:
             if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
             }
         @unknown default:
             fatalError()
@@ -226,8 +223,11 @@ extension SearchResultsViewController: NSFetchedResultsControllerDelegate {
     }
     
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
         tableView.endUpdates()
+    }    
+    
+    func update() {
+        tableView.reloadData()
     }
     
 }

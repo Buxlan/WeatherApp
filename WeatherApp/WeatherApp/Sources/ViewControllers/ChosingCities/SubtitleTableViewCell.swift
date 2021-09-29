@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SubtitleTableViewCell: UITableViewCell {
+class SubtitleTableViewCell: UITableViewCell, Configurable {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
@@ -31,5 +31,12 @@ class SubtitleTableViewCell: UITableViewCell {
         } else {
             self.backgroundColor = .white
         }
-    }    
+    }
+    
+    // MARK: - Helper functions
+    func configure(data: MainDataModel) {
+        textLabel?.text = data.text
+        detailTextLabel?.text = data.detailText
+    }
+    
 }

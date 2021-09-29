@@ -8,8 +8,32 @@
 import Foundation
 import CoreData
 
+struct CurrentWeatherList: Decodable {
+    
+    enum CodingKeys: CodingKey {
+        case main
+    }
+    
+    var data: CurrentWeatherData
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var temp = CurrentWeatherData(temp: 0.0)
+        do {
+            temp = try container.decode(CurrentWeatherData.self, forKey: .main)
+        } catch {
+            print("Warning: cannot decode weather data for city: \(error)")
+        }
+        data = temp
+    }
+}
+
+struct CurrentWeatherData: Decodable {
+    var temp: Float
+}
+
 @objc(CurrentWeather)
-class CurrentWeather: NSManagedObject, Decodable {
+class CurrentWeather: NSManagedObject {
     
     enum CodingKeys: CodingKey {
         case main
@@ -24,17 +48,16 @@ class CurrentWeather: NSManagedObject, Decodable {
     }
     
     @NSManaged var city: City?
-    @NSManaged var choosedCity: ChoosedCity?
     @NSManaged var temp: Float
     
     convenience init(insertInto context: NSManagedObjectContext?) {
-        let manager = CoreDataManager.instance
+        let manager = CoreDataManager.shared
         self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
                   insertInto: context)
     }
         
     convenience init() {
-        let manager = CoreDataManager.instance
+        let manager = CoreDataManager.shared
         self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
                   insertInto: manager.privateObjectContext)
     }
@@ -43,19 +66,15 @@ class CurrentWeather: NSManagedObject, Decodable {
         super.init(entity: entity, insertInto: context)
     }
     
-    required convenience init(from decoder: Decoder) throws {
-        let manager = CoreDataManager.instance
+    convenience init(currentWeatherData: CurrentWeatherData, context: NSManagedObjectContext) {
+        let manager = CoreDataManager.shared
         self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
-                  insertInto: manager.privateObjectContext)
-        
-        let data = try decoder.container(keyedBy: CodingKeys.self)
-        let main = try data.nestedContainer(keyedBy: MainSectionCodingKeys.self, forKey: .main)
-        self.temp = try main.decode(Float.self, forKey: .temp)
-        print(temp)
+                  insertInto: context)
+        self.temp = currentWeatherData.temp ?? 0.0
     }
     
     // MARK: Helper functions
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<CurrentWeather> {
+    @nonobjc public class func prepareFetchRequest() -> NSFetchRequest<CurrentWeather> {
         let request = NSFetchRequest<CurrentWeather>(entityName: "CurrentWeather")
         request.sortDescriptors = [NSSortDescriptor(key: "city.name", ascending: true)]
         return request

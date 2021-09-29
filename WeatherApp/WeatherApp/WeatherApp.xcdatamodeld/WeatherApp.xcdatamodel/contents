@@ -1,35 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17709" systemVersion="20D91" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <entity name="ChoosedCity" representedClassName="ChoosedCity" syncable="YES">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <relationship name="city" maxCount="1" deletionRule="Nullify" destinationEntity="City" inverseName="selected" inverseEntity="City"/>
-        <relationship name="currentWeather" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CurrentWeather" inverseName="choosedCity" inverseEntity="CurrentWeather"/>
-        <relationship name="weatherByDate" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="WeatherByDate" inverseName="chosedCity" inverseEntity="WeatherByDate"/>
-    </entity>
-    <entity name="City" representedClassName="City" syncable="YES">
-        <attribute name="coordLat" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="coordLon" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
+    <entity name="City1" representedClassName="City1" syncable="YES">
+        <attribute name="coordLatitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="coordLongitude" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="country" optional="YES" attributeType="String"/>
         <attribute name="id" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="isChosen" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="state" optional="YES" attributeType="String"/>
-        <relationship name="currentWeather" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CurrentWeather" inverseName="city" inverseEntity="CurrentWeather"/>
-        <relationship name="selected" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChoosedCity" inverseName="city" inverseEntity="ChoosedCity"/>
+        <relationship name="currentWeather" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CurrentWeather2" inverseName="city" inverseEntity="CurrentWeather2"/>
+        <fetchIndex name="byNameIndex">
+            <fetchIndexElement property="name" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIsChosenIndex">
+            <fetchIndexElement property="isChosen" type="Binary" order="ascending"/>
+        </fetchIndex>
     </entity>
-    <entity name="CurrentWeather" representedClassName="CurrentWeather" syncable="YES">
+    <entity name="CurrentWeather2" representedClassName="CurrentWeather2" syncable="YES">
         <attribute name="temp" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <relationship name="choosedCity" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChoosedCity" inverseName="currentWeather" inverseEntity="ChoosedCity"/>
-        <relationship name="city" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="City" inverseName="currentWeather" inverseEntity="City"/>
-    </entity>
-    <entity name="WeatherByDate" representedClassName="WeatherByDate" syncable="YES">
-        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="temp" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <relationship name="chosedCity" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ChoosedCity" inverseName="weatherByDate" inverseEntity="ChoosedCity"/>
+        <relationship name="city" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="City1" inverseName="currentWeather" inverseEntity="City1"/>
     </entity>
     <elements>
-        <element name="ChoosedCity" positionX="-54" positionY="54" width="128" height="89"/>
-        <element name="City" positionX="-63" positionY="-18" width="128" height="149"/>
-        <element name="CurrentWeather" positionX="-63" positionY="36" width="128" height="74"/>
-        <element name="WeatherByDate" positionX="-54" positionY="54" width="128" height="74"/>
+        <element name="City1" positionX="-63" positionY="-18" width="128" height="149"/>
+        <element name="CurrentWeather2" positionX="-63" positionY="36" width="128" height="59"/>
     </elements>
 </model>

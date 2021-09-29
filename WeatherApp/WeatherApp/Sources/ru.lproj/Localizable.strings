@@ -7,4 +7,9 @@
 */
 "Screens.mainTitle" = "Ваши города";
 "Screens.choosingCitiesTitle" = "Доступные города";
+"Screens.dailyScreenTitle" = "Прогноз на 5 дней";
+"Screens.newCity" = "Добавление города";
 "Buttons.addCities" = "Добавить еще городов";
+"Weather.current" = "Сейчас";
+"Weather.units" = "град.";
+"Controls.done" = "Готово";

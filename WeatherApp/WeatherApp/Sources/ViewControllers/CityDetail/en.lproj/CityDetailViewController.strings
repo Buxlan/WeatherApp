@@ -1,0 +1,15 @@
+
+/* Class = "UITextField"; placeholder = "Долгота"; ObjectID = "IHM-o5-9xU"; */
+"IHM-o5-9xU.placeholder" = "Longitude";
+
+/* Class = "UIButton"; normalTitle = "Записать"; ObjectID = "NrI-3w-00s"; */
+"NrI-3w-00s.normalTitle" = "Save";
+
+/* Class = "UITextField"; placeholder = "Широта"; ObjectID = "OWo-Mz-2jO"; */
+"OWo-Mz-2jO.placeholder" = "Latitude";
+
+/* Class = "UITextField"; placeholder = "Название населенного пункта"; ObjectID = "qAC-Vt-nuM"; */
+"qAC-Vt-nuM.placeholder" = "City name";
+
+/* Class = "UITextField"; placeholder = "Название населенного пункта"; ObjectID = "qAC-Vt-nuM"; */
+"L4R-1e-MHz.placeholder" = "City Identifier";

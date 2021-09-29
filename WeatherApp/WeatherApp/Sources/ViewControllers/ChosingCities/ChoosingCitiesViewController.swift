@@ -13,10 +13,12 @@ class ChoosingCitiesViewController: UIViewController {
     // MARK: - Properties
     var dismissAction: (() -> Void)?
     
+    typealias CellType = SubtitleTableViewCell
     private var viewModel = CitiesViewModel()
             
     private lazy var tableView: UITableView = {
         let view = UITableView(frame: .zero, style: .plain)
+        view.accessibilityIdentifier = "ChoosingCities"
         view.isUserInteractionEnabled = true
         view.delegate = self
         view.dataSource = self
@@ -28,11 +30,14 @@ class ChoosingCitiesViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.rowHeight = UITableView.automaticDimension
         view.estimatedRowHeight = UITableView.automaticDimension
-        view.register(SubtitleTableViewCell.self,
-                      forCellReuseIdentifier: "cell")
+        view.backgroundColor = .white
+        view.register(CellType.self,
+                      forCellReuseIdentifier: CellType.reuseIdentifier)
                       
         view.tableHeaderView = UIView()
         view.tableFooterView = UIView()
+        
+        view.prefetchDataSource = self
         
         return view
     }()
@@ -46,26 +51,23 @@ class ChoosingCitiesViewController: UIViewController {
         view.searchBar.placeholder = "Найти город"
         view.searchBar.barStyle = .default
         view.hidesNavigationBarDuringPresentation = false
-//        view.automaticallyShowsScopeBar = true
-//        view.automaticallyShowsCancelButton = true
-//        view.automaticallyShowsSearchResultsController = true
+        
+        if let textField = view.searchBar.value(forKey: "searchField") as? UITextField {
+            textField.backgroundColor = .white
+            textField.tintColor = .white
+        }
         return view
     }()
     
-    private lazy var dismissButton: UIButton = {
-        let height: CGFloat = 20
-        let view = UIButton()
-        view.setTitle("Готово", for: .normal)
-        view.setTitleColor(.black, for: .normal)
-        view.contentMode = .scaleAspectFit
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentHorizontalAlignment = .center
+    private lazy var doneButton: UIButton = {
+        let view = DoneButton()
         view.addTarget(self, action: #selector(dismissTapped), for: .touchUpInside)
-        view.contentEdgeInsets = .init(top: 8, left: 16, bottom: 8, right: 16)
-        view.layer.cornerRadius = 16
-        view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor.black.cgColor
-        view.clipsToBounds = true
+        return view
+    }()
+    
+    private lazy var addCityButton: AddCityButton = {
+        let view = AddCityButton()
+        view.addTarget(self, action: #selector(addCityHandle), for: .touchUpInside)
         return view
     }()
     
@@ -78,38 +80,28 @@ class ChoosingCitiesViewController: UIViewController {
     }()
     
     // MARK: Init
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureNavigationBar()
-        configureViewModel()
         configureUI()
-        configureSearchController()
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        configureNavigationBar()
         super.viewWillAppear(animated)
+        viewModel.delegate = self
+        viewModel.update()
+        configureNavigationBar()        
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        viewModel.save()
+        viewModel.delegate = nil
+        view.resignFirstResponder()
     }
     
     // MARK: Helper functions
-    private func configureUI() {
-        view.addSubview(tableView)
-        view.addSubview(spinner)
-        view.addSubview(dismissButton)
-        configureConstraints()
-    }
-    
-    private func configureViewModel() {
-        viewModel.delegate = self
-        viewModel.updateAction = { [weak self] in
-            DispatchQueue.main.async {
-                self?.spinner.startAnimating()
-                self?.tableView.reloadData()
-                self?.spinner.stopAnimating()
-            }
-        }
-        viewModel.update()
-    }
     
     override func viewDidDisappear(_ animated: Bool) {
         dismissAction?()
@@ -118,38 +110,51 @@ class ChoosingCitiesViewController: UIViewController {
         
     private func configureNavigationBar() {
         title = L10n.Screens.choosingCitiesTitle
-        guard let navigationController = navigationController else {
-            return
-        }
-        navigationController.setToolbarHidden(true, animated: false)
-        navigationController.setNavigationBarHidden(false, animated: false)
-        navigationController.navigationBar.prefersLargeTitles = true
-        navigationController.hidesBarsWhenKeyboardAppears = false
-        navigationController.hidesBarsOnTap = false
-        navigationItem.setHidesBackButton(true, animated: false)
+        navigationController?.setToolbarHidden(true, animated: false)
+        navigationController?.setNavigationBarHidden(false, animated: false)
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.hidesBarsWhenKeyboardAppears = false
+        navigationController?.hidesBarsOnTap = false
+        navigationItem.setHidesBackButton(false, animated: false)
     }
     
     private func configureSearchController() {
-//        searchController.searchBar.sizeToFit()
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         searchController.searchBar.delegate = self
+        searchController.searchBar.showsCancelButton = true
+        searchController.searchBar.showsSearchResultsButton = true
+        searchController.searchBar.barTintColor = .black
+//        searchController.searchBar.searchTextField.backgroundColor = .white
         definesPresentationContext = true
+    }
+    
+    private func configureUI() {
+        view.backgroundColor = Asset.accent2.color
+        view.addSubview(tableView)
+        view.addSubview(spinner)
+        view.addSubview(doneButton)
+        view.addSubview(addCityButton)
+        configureSearchController()
+        configureConstraints()
     }
     
     private func configureConstraints() {
         let constraints: [NSLayoutConstraint] = [
+            
             tableView.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             tableView.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
-            tableView.widthAnchor.constraint(equalTo: view.layoutMarginsGuide.widthAnchor),
-            tableView.heightAnchor.constraint(equalTo: view.layoutMarginsGuide.heightAnchor),
+            tableView.widthAnchor.constraint(equalTo: view.widthAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            dismissButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
-            dismissButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
-//            dismissButton.widthAnchor.constraint(lessThanOrEqualTo: view.layoutMarginsGuide.widthAnchor),
-//            dismissButton.heightAnchor.constraint(lessThanOrEqualTo: view.layoutMarginsGuide.heightAnchor),
-//            dismissButton.widthAnchor.constraint(equalToConstant: 32),
-//            dismissButton.heightAnchor.constraint(equalToConstant: 32),
+            doneButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
+            doneButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
+            doneButton.heightAnchor.constraint(equalTo: addCityButton.heightAnchor),
+
+            addCityButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -16),
+            addCityButton.centerYAnchor.constraint(equalTo: doneButton.centerYAnchor),
+            addCityButton.heightAnchor.constraint(equalToConstant: 44),
+            addCityButton.widthAnchor.constraint(equalToConstant: 44),
             
             spinner.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
@@ -159,46 +164,44 @@ class ChoosingCitiesViewController: UIViewController {
         NSLayoutConstraint.activate(constraints)
     }
     
-    func update() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.tableView.reloadData()
-            self.spinner.stopAnimating()
-        }
-    }
-    
     @objc
     private func dismissTapped() {
         viewModel.save()
         AppController.shared.isFirstLaunch = false
         navigationController?.popViewController(animated: true)
-    }    
+    }
+    
+    @objc func addCityHandle() {
+        let storyboard = UIStoryboard(name: "CityDetailViewController", bundle: nil)
+        if let vc = storyboard.instantiateInitialViewController() {
+            vc.modalTransitionStyle = .crossDissolve
+            navigationController?.pushViewController(vc, animated: true)
+        }
+    }
+    
 }
 
-extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSource {
+extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching {
+    
+    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+        
+    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = viewModel.item(at: indexPath)
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.prepareForReuse()
-        cell.textLabel?.text = item.name
-        cell.detailTextLabel?.text = "Id: \(item.id)"
-        cell.accessoryType = item.isSelected ? .checkmark : .none
+        let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
         return cell
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let item = viewModel.item(at: indexPath)
-        if item.isSelected {
+        if let castedCell = cell as? Configurable {
+            let model = viewModel.cellModel(at: indexPath)
+            castedCell.configure(data: model)
+        }
+        if item.isChosen {
             cell.setSelected(true, animated: false)
             tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
         }
-    }
-        
-    func numberOfSections(in tableView: UITableView) -> Int {
-        1
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -207,66 +210,17 @@ extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         viewModel.selectItem(at: indexPath)
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
         cell.accessoryType = cell.isSelected ? .checkmark : .none
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
     
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         viewModel.selectItem(at: indexPath)
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
         cell.accessoryType = cell.isSelected ? .checkmark : .none
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
-}
-
-extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate {
-    
-    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
-        spinner.startAnimating()
-        tableView.beginUpdates()
-    }
-    
-    // swiftlint:disable:next cyclomatic_complexity
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        
-        if view.window == nil { return }
-        switch type {
-        case .insert:
-            if let indexPath = newIndexPath {
-                tableView.insertRows(at: [indexPath], with: .automatic)
-            }
-        case .update:
-            if let indexPath = indexPath {
-                let item = viewModel.item(at: indexPath)
-                if let cell = tableView.cellForRow(at: indexPath) {
-                    let name = item.name
-                    cell.textLabel?.text = name
-                }
-            }
-        case .move:
-            if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
-            }
-            if let newIndexPath = newIndexPath {
-                tableView.insertRows(at: [newIndexPath], with: .automatic)
-            }
-        case .delete:
-            if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
-            }
-        @unknown default:
-            fatalError()
-        }
-    }
-    
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
-        tableView.endUpdates()
-        spinner.stopAnimating()
-    }
-    
 }
 
 extension ChoosingCitiesViewController: UISearchBarDelegate {
@@ -276,11 +230,62 @@ extension ChoosingCitiesViewController: UISearchBarDelegate {
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
+        searchBar.endEditing(true)
+        navigationController?.popViewController(animated: true)
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
+        searchBar.endEditing(true)
+        navigationController?.popViewController(animated: true)
     }
     
+}
+
+extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Updateable {
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.beginUpdates()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                    didChange anObject: Any,
+                    at indexPath: IndexPath?,
+                    for type: NSFetchedResultsChangeType,
+                    newIndexPath: IndexPath?) {
+                
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                self.tableView.insertRows(at: [indexPath], with: .automatic)
+            }
+        case .update:
+            if let indexPath = indexPath {
+                let item = viewModel.cellModel(at: indexPath)
+                if let cell = tableView.cellForRow(at: indexPath) as? Configurable {
+                    cell.configure(data: item)
+                }
+            }
+        case .move:
+            if let indexPath = indexPath {
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+            if let newIndexPath = newIndexPath {
+                self.tableView.insertRows(at: [newIndexPath], with: .automatic)
+            }
+        case .delete:
+            if let indexPath = indexPath {
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+        @unknown default:
+            fatalError()
+        }
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.endUpdates()
+    }
+    
+    func update() {
+        tableView.reloadData()
+    }
 }

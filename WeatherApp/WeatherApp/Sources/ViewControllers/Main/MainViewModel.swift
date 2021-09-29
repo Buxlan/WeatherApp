@@ -7,75 +7,72 @@
 
 import Foundation
 import CoreData
+import UIKit
 
-class MainViewModel {
+class MainViewModel: NSObject {
     
-    typealias Item = ChoosedCity
+    typealias ItemType = City
+    typealias CellModelType = MainDataModel
     
-    weak var delegate: NSFetchedResultsControllerDelegate? {
+    weak var delegate: (NSFetchedResultsControllerDelegate
+                        & Navigatable
+                        & Updateable)? {
         didSet {
             fetchResultsController.delegate = delegate
-            WeatherManager.shared.addObserver(self)
         }
     }
-    var updateAction: (() -> Void)?
     
-    private lazy var fetchResultsController: NSFetchedResultsController<Item> = {
-        let fetchRequest = ChoosedCity.prepareFetchRequest()
-        let sortDescriptor = NSSortDescriptor(key: "city.name", ascending: true)
+    private var isLoading: Bool = false
+    
+    private var managedObjectContext = CoreDataManager.shared.mainObjectContext
+    private lazy var fetchResultsController: NSFetchedResultsController<ItemType> = {
+        let fetchRequest = ItemType.prepareFetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
+        fetchRequest.predicate = NSPredicate(format: "%K == %@", "isChosen", NSNumber(true))
         fetchRequest.sortDescriptors = [sortDescriptor]
 //        let predicate = NSPredicate(format: "%K == %@", "order", order)
 //        fetchRequest.predicate = predicate
-        let context = CoreDataManager.instance.mainObjectContext
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: context,
+                                                                  managedObjectContext: managedObjectContext,
                                                                   sectionNameKeyPath: nil,
-                                                                  cacheName: nil)        
+                                                                  cacheName: nil)
+        fetchedResultsController.delegate = delegate
         return fetchedResultsController
     }()
+    // MARK: - Init    
     
-    func update(with condition: Condition? = nil) {
-        let context = fetchResultsController.managedObjectContext
-        self.prepareCitiesIfNeeded()
-        context.perform {
+    // MARK: - Helper functions
+    func update() {
+        managedObjectContext.perform {
             do {
                 try self.fetchResultsController.performFetch()
-                self.updateAction?()
+                self.delegate?.update()
             } catch {
                 print(error)
             }
         }
     }
     
-    private func prepareCitiesIfNeeded() {
-        DispatchQueue.global(qos: .userInteractive).async {
-            if !AppController.shared.areCitiesLoaded {
-                CityManager.initCitiesFromFile()
-                self.update()
-            }
-        }
+    func cellModel(at indexPath: IndexPath) -> CellModelType {
+        let item = self.item(at: indexPath)
+        let text = item.name
+        let detailText = "\(item.currentWeather?.temp ?? 0.0)"
+        let cellModel = CellModelType(text: text, detailText: detailText)
+        return cellModel
     }
     
-    func item(at indexPath: IndexPath) -> Item {
-        return fetchResultsController.object(at: indexPath)
+    func item(at indexPath: IndexPath) -> ItemType {
+        fetchResultsController.object(at: indexPath)
     }
     
     var itemsCount: Int {
-        if let count = fetchResultsController.sections?[0].numberOfObjects {
-            return count
+        fetchResultsController.sections?[0].numberOfObjects ?? 0
+    }
+    
+    func prepareNavigation(to viewController: UIViewController, _ indexPath: IndexPath) {
+        if let viewController = viewController as? DailyWeatherViewController {
+            let city = item(at: indexPath)
+            viewController.city = city
         }
-        return 0
     }
-    
-    deinit {
-        WeatherManager.shared.removeObserver(self)
-    }
-}
-
-extension MainViewModel: Observer {
-    
-    func notify() {
-        self.update()
-    }
-    
 }

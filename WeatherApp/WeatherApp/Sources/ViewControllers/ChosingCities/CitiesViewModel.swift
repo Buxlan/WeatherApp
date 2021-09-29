@@ -7,105 +7,90 @@
 
 import Foundation
 import CoreData
+import UIKit
 
-enum Condition {
-    case bool(Bool)
-    case string(String)
-    case none
-}
-
-class CitiesViewModel {
+class CitiesViewModel: NSObject {
     
-    typealias Item = City
+    typealias ItemType = City
+    typealias CellModelType = MainDataModel
     
-    private var fitler: String = ""
-    
-    weak var delegate: NSFetchedResultsControllerDelegate? {
+    weak var delegate: (NSFetchedResultsControllerDelegate & Updateable)? {
         didSet {
             fetchResultsController.delegate = delegate
         }
     }
-    var updateAction: (() -> Void)?
     
-    private lazy var fetchResultsController: NSFetchedResultsController<Item> = {
+    private var isLoading: Bool = false
+    
+    private var managedObjectContext = CoreDataManager.shared.mainObjectContext
+    private lazy var fetchResultsController: NSFetchedResultsController<ItemType> = {
         let fetchRequest = City.prepareFetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
         fetchRequest.sortDescriptors = [sortDescriptor]
 //        let predicate = NSPredicate(format: "%K == %@", "order", order)
 //        fetchRequest.predicate = predicate
-        let context = CoreDataManager.instance.mainObjectContext
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: context,
+                                                                  managedObjectContext: managedObjectContext,
                                                                   sectionNameKeyPath: nil,
                                                                   cacheName: nil)
+        fetchedResultsController.delegate = delegate
         return fetchedResultsController
     }()
+    // MARK: - Init    
     
-    func update(filter: String = "") {
+    // MARK: - Helper functions
+    func update(with filter: String = "") {
         if filter.isEmpty {
             fetchResultsController.fetchRequest.predicate = nil
         } else {
-            let predicate = NSPredicate(format: "name CONTAINS[cd] %@", filter)
+            let predicate = NSPredicate(format: "%K contains[cd] %@", "name", filter)
             fetchResultsController.fetchRequest.predicate = predicate
         }
-        do {
-            try self.fetchResultsController.performFetch()
-            self.updateAction?()
-        } catch {
-            print(error)
-        }
-    }
-    
-    func item(at indexPath: IndexPath) -> Item {
-        return fetchResultsController.object(at: indexPath)
-    }
-    
-    var itemsCount: Int {
-        if let count = fetchResultsController.sections?[0].numberOfObjects {
-            return count
-        }
-        return 0
-    }
-    
-    func selectItem(at indexPath: IndexPath) {
-        let item = self.item(at: indexPath)
-        let manager = CoreDataManager.instance
-        let mainContext = manager.mainObjectContext
-        let privateContext = manager.privateObjectContext
-        if let selected = item.selected {
-            mainContext.delete(selected)
-            item.selected = nil
-        } else {
-            let choosedCity = ChoosedCity(insertInto: mainContext)
-            item.selected = choosedCity
-            mainContext.perform {
-                do {
-                    try mainContext.save()
-                    if let selectedNew = try privateContext.existingObject(with: choosedCity.objectID) as? ChoosedCity {
-                        WeatherManager.shared.updateCurrentWeather(at: selectedNew, in: privateContext)
-                    }
-                } catch {
-                    print("error saving")
-                }
+        managedObjectContext.perform {
+            do {
+                try self.fetchResultsController.performFetch()
+                print("perform fetch")
+                self.delegate?.update()
+            } catch {
+                print(error)
             }
         }
     }
     
-    func save() {
-        CoreDataManager.instance.save(CoreDataManager.instance.mainObjectContext)
+    func cellModel(at indexPath: IndexPath) -> CellModelType {
+        let item = self.item(at: indexPath)
+        let text = item.name
+        let detailText = String(format: "Lat: %.6f, Lon: %.6f", item.coord.latitude, item.coord.longitude)
+        let cellModel = CellModelType(text: text, detailText: detailText)
+        return cellModel
     }
     
-//    func prepareFetchResultsController() -> NSFetchedResultsController<Item> {
-//        let fetchRequest = City.fetchRequest(filter: self.fitler)
-//        let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
-//        fetchRequest.sortDescriptors = [sortDescriptor]
-////        let predicate = NSPredicate(format: "%K == %@", "order", order)
-////        fetchRequest.predicate = predicate
-//        let context = CoreDataManager.instance.privateObjectContext
-//        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
-//                                                                  managedObjectContext: context,
-//                                                                  sectionNameKeyPath: nil,
-//                                                                  cacheName: nil)
-//        return fetchedResultsController
-//    }
+    func item(at indexPath: IndexPath) -> ItemType {
+        fetchResultsController.object(at: indexPath)
+    }
+    
+    var itemsCount: Int {
+        fetchResultsController.sections?[0].numberOfObjects ?? 0
+    }
+    
+    func selectItem(at indexPath: IndexPath) {
+        let item = self.item(at: indexPath)
+        item.isChosen = !item.isChosen
+        let context = CoreDataManager.shared.mainObjectContext
+        CoreDataManager.shared.save(context)
+    }
+    
+    func save() {
+        DispatchQueue.global(qos: .userInteractive).async {
+            CurrentWeatherManager.shared.update()
+        }
+    }        
+}
+
+extension CitiesViewModel: Observer {
+    
+    func notify() {
+        self.update()
+    }
+    
 }

@@ -13,15 +13,24 @@ protocol Observer: class {
     func notify()    
 }
 
+protocol Updateable: class {
+    func update()
+}
+
+protocol Navigatable: class {
+    func prepareNavigation(viewController: UIViewController)
+}
+
 class MainViewController: UIViewController {
     
     // MARK: - Properties
-    typealias Item = ChoosedCity
     private var viewModel = MainViewModel()
             
     private lazy var tableView: UITableView = {
         let view = UITableView(frame: .zero, style: .plain)
+        view.accessibilityIdentifier = "Main"
         view.isUserInteractionEnabled = true
+        view.backgroundColor = .white
         view.delegate = self
         view.dataSource = self
         view.allowsSelection = true
@@ -35,7 +44,7 @@ class MainViewController: UIViewController {
         view.register(MainViewTableCell.self,
                       forCellReuseIdentifier: "cell")
                       
-        view.tableHeaderView = UIView()
+//        view.tableHeaderView = UIView()
         view.tableFooterView = UIView()
         
         return view
@@ -60,9 +69,8 @@ class MainViewController: UIViewController {
         view.addTarget(self, action: #selector(addCitiesTapped), for: .touchUpInside)
         view.contentEdgeInsets = .init(top: 8, left: 16, bottom: 8, right: 16)
         view.layer.cornerRadius = 16
-        view.layer.borderWidth = 0.5
-        view.layer.borderColor = UIColor.black.cgColor
         view.clipsToBounds = true
+        view.backgroundColor = Asset.accent2.color
         return view
     }()
     
@@ -70,13 +78,13 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         viewModel.delegate = self
-        viewModel.updateAction = { [weak self] in
-            DispatchQueue.main.async {
-                self?.spinner.startAnimating()
-                self?.tableView.reloadData()
-                self?.spinner.stopAnimating()
-            }
-        }
+//        viewModel.updateAction = { [weak self] in
+//            DispatchQueue.main.async {
+//                self?.spinner.startAnimating()
+//                self?.tableView.reloadData()
+//                self?.spinner.stopAnimating()
+//            }
+//        }
         viewModel.update()        
         configureUI()
     }
@@ -85,18 +93,24 @@ class MainViewController: UIViewController {
         super.viewDidAppear(animated)
         let appController = AppController()
         if appController.isFirstLaunch {
-            sequeToChoosingCities()
+            segueToChoosingCities()
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        configureNavigationBar()        
+        configureNavigationBar()
+        viewModel.delegate = self
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        viewModel.delegate = nil
+        super.viewWillDisappear(animated)                
     }
     
     // MARK: Helper functions
     func configureUI() {
-        spinner.startAnimating()
+        view.backgroundColor = Asset.accent2.color
         view.addSubview(tableView)
         view.addSubview(spinner)
         view.addSubview(addCitiesButton)
@@ -105,36 +119,37 @@ class MainViewController: UIViewController {
     
     private func configureNavigationBar() {
         title = L10n.Screens.mainTitle
-        guard let navigationController = navigationController else {
-            return
-        }
-        navigationController.setToolbarHidden(true, animated: false)
-        navigationController.setNavigationBarHidden(false, animated: false)
-        navigationController.navigationBar.prefersLargeTitles = true
+//        guard let navigationController = navigationController else {
+//            return
+//        }
+        navigationController?.setToolbarHidden(true, animated: false)
+        navigationController?.setNavigationBarHidden(false, animated: false)
+        navigationController?.navigationBar.prefersLargeTitles = true
     }
     
     private func configureConstraints() {
         let constraints: [NSLayoutConstraint] = [
             tableView.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             tableView.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
-            tableView.widthAnchor.constraint(equalTo: view.layoutMarginsGuide.widthAnchor),
-            tableView.heightAnchor.constraint(equalTo: view.layoutMarginsGuide.heightAnchor),
+            tableView.widthAnchor.constraint(equalTo: view.widthAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             spinner.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
             
             addCitiesButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
-            addCitiesButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24)
+            addCitiesButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
+            addCitiesButton.heightAnchor.constraint(equalToConstant: 44),
         ]
         NSLayoutConstraint.activate(constraints)
     }
     
     @objc
     private func addCitiesTapped() {
-        sequeToChoosingCities()
+        segueToChoosingCities()
     }
     
-    private func sequeToChoosingCities() {
+    private func segueToChoosingCities() {
         let vc = ChoosingCitiesViewController()
         vc.modalTransitionStyle = .crossDissolve
         vc.dismissAction = { [weak self] in
@@ -151,73 +166,49 @@ class MainViewController: UIViewController {
 
 extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let vc = DailyWeatherViewController()
+        viewModel.prepareNavigation(to: vc, indexPath)
+        navigationController?.pushViewController(vc, animated: true)
+    }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = viewModel.item(at: indexPath)
+        let model = viewModel.cellModel(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = item.city.name        
-        if let castedCell = cell as? ConfigurableCell {
-            castedCell.configure(city: item)
+        switch cell {
+        case let cell as Configurable:
+            cell.configure(data: model)
+        default:
+            print("Warning: Strange cell type?!")
         }
         return cell
     }
-        
-    func numberOfSections(in tableView: UITableView) -> Int {
-        1
-    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.itemsCount
+        viewModel.itemsCount
+    }
+}
+
+extension MainViewController: Navigatable, Updateable {
+
+    func prepareNavigation(viewController: UIViewController) {
+        navigationController?.pushViewController(viewController, animated: true)
     }
     
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
+    func update() {
+        DispatchQueue.main.async {
+            self.spinner.startAnimating()
+            self.tableView.reloadData()
+            self.spinner.stopAnimating()
+        }
     }
     
 }
 
 extension MainViewController: NSFetchedResultsControllerDelegate {
-    
-    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
-        tableView.beginUpdates()
-    }
-    
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         
-        if view.window == nil { return }
-        switch type {
-        case .insert:
-            if let indexPath = newIndexPath {
-                tableView.insertRows(at: [indexPath], with: .automatic)
-            }
-        case .update:
-            if let indexPath = indexPath {
-                let item = viewModel.item(at: indexPath)
-                let cell = tableView.cellForRow(at: indexPath)!
-                let name = item.city.name
-                cell.textLabel?.text = name
-                if let castedCell = cell as? ConfigurableCell {
-                    castedCell.configure(city: item)
-                }
-            }
-        case .move:
-            if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
-            }
-            if let newIndexPath = newIndexPath {
-                tableView.insertRows(at: [newIndexPath], with: .automatic)
-            }
-        case .delete:
-            if let indexPath = indexPath {
-                tableView.deleteRows(at: [indexPath], with: .automatic)
-            }
-        @unknown default:
-            fatalError()
-        }
-    }
-    
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        if view.window == nil { return }
-        tableView.endUpdates()
+        self.tableView.reloadData()
     }
 }

@@ -7,4 +7,9 @@
 */
 "Screens.mainTitle" = "Your cities";
 "Screens.choosingCitiesTitle" = "Choose your cities";
+"Screens.dailyScreenTitle" = "Daily forecast";
+"Screens.newCity" = "New city";
 "Buttons.addCities" = "Add more cities";
+"Weather.current" = "Current";
+"Weather.units" = "deg.";
+"Controls.done" = "Done";
