@@ -35,7 +35,7 @@ class DailyWeatherViewModel {
     weak var delegate: (Updatable)?
     // MARK: - Init    
             
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     func update() {
         guard let city = city else {
             return

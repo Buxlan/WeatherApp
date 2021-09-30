@@ -13,35 +13,20 @@ class CityFileLoader {
             print("Cities: cannot find file with needed url")
             return
         }
-                
         do {
             var data = Data()
             data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
-            let context = CoreDataManager.shared.privateObjectContext
-            context.perform {
-                do {
-                    let citiesData = try decoder.decode([CityData].self, from: data)
-                    if citiesData.count == 0 {
-                        print("File with cities is empty")
-                        return
-                    }
-                    _ = citiesData.map { (cityData) -> City in
-                        City(cityData: cityData, context: context)
-                    }
-                    if context.hasChanges {
-                        try context.save()
-                        AppController.shared.areCitiesLoaded = true
-                    }
-    //                    self.notifyObservers()
-                } catch {
-                    print(error)
+            do {
+                let citiesData = try decoder.decode([CityData].self, from: data)
+                if citiesData.count == 0 {
+                    fatalError("File with cities is empty")
                 }
+            } catch {
+                print(error)
             }
-            
         } catch {
-            print("File with cities cannot be decoded, error \(error)")
-            return
+            fatalError("File with cities cannot be decoded, error \(error)")
         }
     }
 }

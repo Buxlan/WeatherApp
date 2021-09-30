@@ -110,13 +110,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("Memory warning, need free some space")        
     }
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     private func configureBarAppearance() {
         
         UINavigationBar.appearance().backgroundColor = Asset.accent2.color
         UINavigationBar.appearance().tintColor = Asset.main0.color
         UINavigationBar.appearance().barTintColor = Asset.other1.color
-        
+                
         let attr = [NSAttributedString.Key.foregroundColor: UIColor.black]
         UITabBarItem.appearance().setTitleTextAttributes(attr, for: .selected)
         let attr2 = [NSAttributedString.Key.foregroundColor: UIColor.black]

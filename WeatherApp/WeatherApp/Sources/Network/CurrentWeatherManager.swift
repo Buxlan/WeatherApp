@@ -33,7 +33,7 @@ class CurrentWeatherManager: NSObject {
         timer = nil
     }
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     
     func startTimer() {
         guard timer == nil else { return }
@@ -80,22 +80,17 @@ class CurrentWeatherManager: NSObject {
                         let currentWeather = CurrentWeather(currentWeatherData: currentWeatherData.data,
                                                             context: context)
                         currentWeather.city = city
-                        if context.hasChanges {
-                            do {
-                                try context.save()
-                                self.completionHandler = nil
-                            } catch {
-                                print(error)
-                            }
+                        do {
+                            try CoreDataManager.shared.save(context)
+                        } catch {
+                            print(error)
                         }
                     }
                     self.completionHandler = handler
-                    self.updateCurrentWeather(at: city,
-                                              completionHandler: handler)
+                    self.fetchRequestCurrentWeather(at: city,
+                                                    completionHandler: handler)
                 }
-                if context.hasChanges {
-                    try context.save()
-                }
+                
                 self.observers.forEach {
                     $0.notify()
                 }
@@ -106,7 +101,7 @@ class CurrentWeatherManager: NSObject {
         
     }
     
-    private func updateCurrentWeather(at city: City,
+    private func fetchRequestCurrentWeather(at city: City,
                                       completionHandler: @escaping ((CurrentWeatherList) -> Void)) {
         guard let request = prepareRequest(city: city) else {
             return
@@ -120,8 +115,6 @@ class CurrentWeatherManager: NSObject {
                 print("Data is nil")
                 return
             }
-            print(String(data: data, encoding: .utf8))
-            print(response)
             let decoder = JSONDecoder()
             do {
                 let currentWeatherData = try decoder.decode(CurrentWeatherList.self, from: data)

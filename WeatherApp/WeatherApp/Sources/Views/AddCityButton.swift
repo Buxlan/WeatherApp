@@ -7,10 +7,11 @@
 
 import UIKit
 
-class AddCityButton: UIButton {
+class AddCityButton: ShadowButton {
     
     init() {
-        super.init(frame: .zero)
+        let image = Asset.plus.image
+        super.init(title: nil, image: image)
         configureUI()
     }
     
@@ -20,12 +21,10 @@ class AddCityButton: UIButton {
     
     func configureUI() {
         self.translatesAutoresizingMaskIntoConstraints = false
-        let image = Asset.plus.image
         imageView?.contentMode = .scaleAspectFit
         backgroundColor = Asset.accent2.color
         layer.cornerRadius = 16
         contentEdgeInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
-        setImage(image, for: .normal)
     }
     
 }

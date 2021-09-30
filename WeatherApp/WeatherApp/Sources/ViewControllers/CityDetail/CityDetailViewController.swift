@@ -5,6 +5,11 @@
 //  Created by  Buxlan on 9/16/21.
 //
 
+// Яркий пример massive view controller,
+// который хотелось бы переделать в MVVM паттерн, но в рамках тестового задания делать это нецелесообразно.
+// примеры использования мною паттерна MVVM приведены в других VC
+// Инстанцируется из storyboard
+
 import UIKit
 import CoreData
 
@@ -24,11 +29,13 @@ class CityDetailViewController: UIViewController {
     @IBOutlet var cityIdTextField: UITextField!
     @IBOutlet var longitudeTextField: UITextField!
     @IBOutlet var latitudeTextField: UITextField!
-    @IBOutlet var doneButton: UIButton!
-    
+    @IBOutlet var doneButton: DoneButton!
+        
     private var managedObjectContext: NSManagedObjectContext = CoreDataManager.shared.mainObjectContext
+    private var needDiscardChanges: Bool = true
     private lazy var city: City = {
         let city = City(context: self.managedObjectContext)
+        managedObjectContext.insert(city)
         city.isChosen = true
         return city
     }()
@@ -39,6 +46,7 @@ class CityDetailViewController: UIViewController {
         super.viewDidLoad()
         configureUI()
         
+        // Subscribe to keyboard showing/hiding
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardShow),
                                                name: UIResponder.keyboardWillShowNotification, object: nil)
@@ -49,10 +57,12 @@ class CityDetailViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        discard()
+        if needDiscardChanges {
+            discard()
+        }
     }
     
-    // MARK: Helper functions
+    // MARK: Helper methods
     func configureUI() {
         title = L10n.Screens.newCity
         view.backgroundColor = Asset.accent2.color
@@ -89,24 +99,7 @@ class CityDetailViewController: UIViewController {
             stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             stackView.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -64),
             stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 32),
-            stackView.heightAnchor.constraint(lessThanOrEqualToConstant: 304),
-            
-//            cityNameTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-//            cityNameTextField.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -64),
-//            cityNameTextField.bottomAnchor.constraint(equalTo: longitudeTextField.topAnchor, constant: -16),
-//            cityNameTextField.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 32),
-//            cityNameTextField.heightAnchor.constraint(equalToConstant: 44),
-//
-//            longitudeTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-//            longitudeTextField.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -64),
-//            longitudeTextField.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-//            longitudeTextField.heightAnchor.constraint(equalToConstant: 44),
-//
-//            latitudeTextField.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-//            latitudeTextField.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -64),
-//            latitudeTextField.topAnchor.constraint(equalTo: longitudeTextField.bottomAnchor, constant: 16),
-//            latitudeTextField.heightAnchor.constraint(equalToConstant: 44),
-//            latitudeTextField.bottomAnchor.constraint(equalTo: doneButton.topAnchor, constant: -32),
+            stackView.heightAnchor.constraint(lessThanOrEqualToConstant: 350),
             
             doneButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             doneButton.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor),
@@ -123,24 +116,18 @@ class CityDetailViewController: UIViewController {
     }
     
     private func discard() {
-        let context = CoreDataManager.shared.mainObjectContext
-        if !context.hasChanges { return }
-        context.perform {
-            do {
-                context.delete(self.city)
-                try context.save()
-            } catch {
-                print(error)
-            }
-        }
+        managedObjectContext.delete(self.city)
+        save()
     }
     
     private func save() {
-        let context = CoreDataManager.shared.mainObjectContext
-        if !context.hasChanges { return }
-        context.perform {
+        needDiscardChanges = false
+        managedObjectContext.perform {
             do {
-                try context.save()
+                try CoreDataManager.shared.save(self.managedObjectContext)
+                DispatchQueue.global(qos: .userInitiated).async {
+                    CurrentWeatherManager.shared.update()
+                }
             } catch {
                 print(error)
             }
@@ -157,6 +144,7 @@ class CityDetailViewController: UIViewController {
             return
         }
         save()
+        navigationController?.popToRootViewController(animated: true)
     }
     
     private func updateAppearance(for textField: UITextField, state: TextFieldState) {
@@ -307,13 +295,18 @@ extension CityDetailViewController: UITextFieldDelegate {
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
         switch textField {
-        case latitudeTextField:
+        case cityIdTextField:
             guard CharacterSet(charactersIn: "0123456789").isSuperset(of: CharacterSet(charactersIn: string)) else {
                 return false
             }
             return true
+        case latitudeTextField:
+            guard CharacterSet(charactersIn: "0123456789.").isSuperset(of: CharacterSet(charactersIn: string)) else {
+                return false
+            }
+            return true
         case longitudeTextField:
-            guard CharacterSet(charactersIn: "0123456789").isSuperset(of: CharacterSet(charactersIn: string)) else {
+            guard CharacterSet(charactersIn: "0123456789.").isSuperset(of: CharacterSet(charactersIn: string)) else {
                 return false
             }
             return true

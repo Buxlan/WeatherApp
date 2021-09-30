@@ -51,7 +51,7 @@
                                                     </textField>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NrI-3w-00s" customClass="DoneButton" customModule="WeatherApp" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="200" width="275" height="30"/>
-                                                        <color key="backgroundColor" name="accent1"/>
+                                                        <color key="backgroundColor" name="accent2"/>
                                                         <state key="normal" title="Записать">
                                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         </state>
@@ -89,8 +89,8 @@
         </scene>
     </scenes>
     <resources>
-        <namedColor name="accent1">
-            <color red="0.10599999874830246" green="0.32199999690055847" blue="0.5690000057220459" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        <namedColor name="accent2">
+            <color red="0.99599999189376831" green="0.56099998950958252" blue="0.37299999594688416" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

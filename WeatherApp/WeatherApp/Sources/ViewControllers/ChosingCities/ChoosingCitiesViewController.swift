@@ -59,7 +59,7 @@ class ChoosingCitiesViewController: UIViewController {
         return view
     }()
     
-    private lazy var doneButton: UIButton = {
+    private lazy var doneButton: DoneButton = {
         let view = DoneButton()
         view.addTarget(self, action: #selector(dismissTapped), for: .touchUpInside)
         return view
@@ -95,11 +95,13 @@ class ChoosingCitiesViewController: UIViewController {
     }
     
     override func viewWillDisappear(_ animated: Bool) {
+        navigationItem.searchController = nil
+        navigationItem.searchController?.searchBar.setShowsCancelButton(false, animated: false)
         prepareDismiss()
         super.viewWillDisappear(animated)
     }
     
-    // MARK: Helper functions
+    // MARK: Helper methods
     
     override func viewDidDisappear(_ animated: Bool) {
         dismissAction?()
@@ -144,15 +146,16 @@ class ChoosingCitiesViewController: UIViewController {
             tableView.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
             tableView.widthAnchor.constraint(equalTo: view.widthAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
-            doneButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
+                        
+            doneButton.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 24),
+            doneButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -24),
             doneButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
-            doneButton.heightAnchor.constraint(equalTo: addCityButton.heightAnchor),
+            doneButton.heightAnchor.constraint(equalToConstant: 44),
 
             addCityButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -16),
-            addCityButton.centerYAnchor.constraint(equalTo: doneButton.centerYAnchor),
-            addCityButton.heightAnchor.constraint(equalToConstant: 44),
-            addCityButton.widthAnchor.constraint(equalToConstant: 44),
+            addCityButton.bottomAnchor.constraint(equalTo: doneButton.topAnchor, constant: -60),
+            addCityButton.heightAnchor.constraint(equalToConstant: 60),
+            addCityButton.widthAnchor.constraint(equalToConstant: 60),
             
             spinner.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),

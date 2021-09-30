@@ -82,7 +82,7 @@ class DailyWeatherViewController: UIViewController {
         viewModel.delegate = nil
     }
     
-    // MARK: Helper functions
+    // MARK: Helper methods
     func configureUI() {
         spinner.startAnimating()
         view.addSubview(tableView)

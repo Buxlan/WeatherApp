@@ -52,7 +52,7 @@ class SearchResultsViewController: UITableViewController {
         removeKeyboardNotificationObservers()
     }
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = viewModel.item(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)

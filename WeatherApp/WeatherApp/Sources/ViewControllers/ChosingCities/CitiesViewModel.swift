@@ -20,6 +20,15 @@ class CitiesViewModel: NSObject {
         }
     }
     
+    override init() {
+        super.init()
+        let notificationCenter = NotificationCenter.default
+//        notificationCenter.addObserver(self,
+//                                       selector: #selector(managedObjectContextDidSave),
+//                                       name: NSNotification.Name.NSManagedObjectContextDidSave,
+//                                       object: managedObjectContext)
+    }
+    
     private var isLoading: Bool = false
     
     private var managedObjectContext = CoreDataManager.shared.mainObjectContext
@@ -38,7 +47,7 @@ class CitiesViewModel: NSObject {
     }()
     // MARK: - Init    
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     func update(with filter: String = "") {
         if filter.isEmpty {
             fetchResultsController.fetchRequest.predicate = nil
@@ -76,15 +85,30 @@ class CitiesViewModel: NSObject {
     func selectItem(at indexPath: IndexPath) {
         let item = self.item(at: indexPath)
         item.isChosen = !item.isChosen
-        let context = CoreDataManager.shared.mainObjectContext
-        CoreDataManager.shared.save(context)
     }
     
     func save() {
-        DispatchQueue.global(qos: .userInteractive).async {
-            CurrentWeatherManager.shared.update()
-        }
-    }        
+        managedObjectContext.perform {
+            do {
+                try CoreDataManager.shared.save(self.managedObjectContext)
+                DispatchQueue.global(qos: .userInteractive).async {
+                    CurrentWeatherManager.shared.update()
+                }
+            } catch {
+                print(error)
+            }
+        }        
+    }
+    
+//    @objc
+//    private func managedObjectContextDidSave(notification: Notification) {
+//        let context = CoreDataManager.shared.mainObjectContext
+//        context.perform {
+//            context.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+//            context.mergeChanges(fromContextDidSave: notification)
+//        }
+//    }
+    
 }
 
 extension CitiesViewModel: Observer {

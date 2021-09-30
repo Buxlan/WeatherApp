@@ -58,7 +58,7 @@ class MainViewTableCell: UITableViewCell, Configurable {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     func configure(data: MainDataModel) {
         textLabel?.text = data.text
         detailTextLabel?.text = data.detailText

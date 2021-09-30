@@ -16,13 +16,14 @@ class City: NSManagedObject {
     @NSManaged public var country: String?
     @NSManaged public var id: Int32
     @NSManaged public var isChosen: Bool
+    @NSManaged public var isCurrent: Bool
     @NSManaged public var name: String
     @NSManaged public var state: String?
     @NSManaged public var currentWeather: CurrentWeather?
     
     convenience init(cityData: CityData, context: NSManagedObjectContext) {
         let manager = CoreDataManager.shared
-        self.init(entity: manager.entityForName(entityName: "City"),
+        self.init(entity: manager.entityForName(entityName: "City", context: context),
                   insertInto: context)
         self.id = cityData.id
         self.name = cityData.name
@@ -30,9 +31,9 @@ class City: NSManagedObject {
         self.state = cityData.state
         self.currentWeather = nil
         self.isChosen = false
+        self.isCurrent = false
         let latitude = Float(cityData.coord?.latitude ?? 0.0)
         let longitude = Float(cityData.coord?.longitude ?? 0.0)
-//        print("lat: \(latitude), lon: \(longitude)")
         self.coordLatitude = latitude
         self.coordLongitude = longitude
     }
@@ -69,5 +70,23 @@ extension City {
                                     longitudeMax)
         request.predicate = predicate
         return request
+    }
+    
+    func addEntities(data: [CityData]) {
+        let context = CoreDataManager.shared.privateObjectContext
+        context.perform {
+            do {
+                _ = data.map { (cityData) -> City in
+                    City(cityData: cityData, context: context)
+                }
+                if context.hasChanges {
+                    try context.save()
+                    AppController.shared.areCitiesLoaded = true
+                }
+            } catch {
+                print(error)
+            }
+        }
+        
     }
 }

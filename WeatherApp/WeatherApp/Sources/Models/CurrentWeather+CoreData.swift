@@ -52,14 +52,8 @@ class CurrentWeather: NSManagedObject {
     
     convenience init(insertInto context: NSManagedObjectContext?) {
         let manager = CoreDataManager.shared
-        self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
+        self.init(entity: manager.entityForName(entityName: "CurrentWeather", context: context),
                   insertInto: context)
-    }
-        
-    convenience init() {
-        let manager = CoreDataManager.shared
-        self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
-                  insertInto: manager.privateObjectContext)
     }
     
     override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
@@ -68,12 +62,12 @@ class CurrentWeather: NSManagedObject {
     
     convenience init(currentWeatherData: CurrentWeatherData, context: NSManagedObjectContext) {
         let manager = CoreDataManager.shared
-        self.init(entity: manager.entityForName(entityName: "CurrentWeather"),
+        self.init(entity: manager.entityForName(entityName: "CurrentWeather", context: context),
                   insertInto: context)
-        self.temp = currentWeatherData.temp ?? 0.0
+        self.temp = currentWeatherData.temp
     }
     
-    // MARK: Helper functions
+    // MARK: Helper methods
     @nonobjc public class func prepareFetchRequest() -> NSFetchRequest<CurrentWeather> {
         let request = NSFetchRequest<CurrentWeather>(entityName: "CurrentWeather")
         request.sortDescriptors = [NSSortDescriptor(key: "city.name", ascending: true)]

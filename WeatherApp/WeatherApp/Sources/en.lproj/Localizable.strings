@@ -13,3 +13,4 @@
 "Weather.current" = "Current";
 "Weather.units" = "deg.";
 "Controls.done" = "Done";
+"City.unknown" = "Unknown city";

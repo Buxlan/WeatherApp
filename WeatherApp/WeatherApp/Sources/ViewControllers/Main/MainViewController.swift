@@ -5,25 +5,13 @@
 //  Created by  Buxlan on 9/21/21.
 //
 
+// Старался делать согласно паттерна MVVM, применяя правило, что VC должен знать о
+// Инстанцируется из пустого storyboard
+// Весь интерфейс написан программно.
+
 import UIKit
 import Foundation
 import CoreData
-
-protocol Observer: class {
-    func notify()    
-}
-
-protocol Updatable: class {
-    func update()
-}
-
-protocol Navigatable: class {
-    func prepareNavigation(viewController: UIViewController)
-}
-
-protocol UpdatableCityData {
-    func updateCityInfo(data: CityData)
-}
 
 class MainViewController: UIViewController {
     
@@ -47,8 +35,9 @@ class MainViewController: UIViewController {
         view.estimatedRowHeight = UITableView.automaticDimension
         view.register(MainViewTableCell.self,
                       forCellReuseIdentifier: "cell")
-                      
-//        view.tableHeaderView = UIView()
+        
+        view.tableHeaderView = cityView
+        didChangeCurrentCity(new: nil)
         view.tableFooterView = UIView()
         
         return view
@@ -62,34 +51,28 @@ class MainViewController: UIViewController {
         return view
     }()
     
-    private lazy var determineLocationButton: UIButton = {
-        let height: CGFloat = 20
-        let view = UIButton()
+    private lazy var determineLocationButton: LoadingButton = {
+        let view = LoadingButton()
         view.contentMode = .scaleAspectFit
         view.translatesAutoresizingMaskIntoConstraints = false
         view.addTarget(self, action: #selector(determineLocationHandler), for: .touchUpInside)
-        view.contentEdgeInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
-        view.layer.cornerRadius = 16
-        view.clipsToBounds = true
+        view.contentEdgeInsets = .init(top: 16, left: 16, bottom: 16, right: 16)
         let image = Asset.locationFill.image
         view.setImage(image, for: .normal)
-        view.setTitle("Определить локацию", for: .normal)
         view.backgroundColor = Asset.accent2.color
         return view
     }()
     
-    private lazy var addCitiesButton: UIButton = {
+    private lazy var addCitiesButton: ShadowButton = {
         let height: CGFloat = 20
-        let view = UIButton()
-        view.setTitle(L10n.Buttons.addCities, for: .normal)
+        let text = L10n.Buttons.addCities
+        let view = ShadowButton(title: text, image: nil)
         view.setTitleColor(.black, for: .normal)
         view.contentMode = .scaleAspectFit
         view.translatesAutoresizingMaskIntoConstraints = false
         view.contentHorizontalAlignment = .center
         view.addTarget(self, action: #selector(addCitiesHandler), for: .touchUpInside)
         view.contentEdgeInsets = .init(top: 8, left: 16, bottom: 8, right: 16)
-        view.layer.cornerRadius = 16
-        view.clipsToBounds = true
         view.backgroundColor = Asset.accent2.color
         return view
     }()
@@ -103,14 +86,6 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         viewModel.delegate = self
-//        viewModel.updateAction = { [weak self] in
-//            DispatchQueue.main.async {
-//                self?.spinner.startAnimating()
-//                self?.tableView.reloadData()
-//                self?.spinner.stopAnimating()
-//            }
-//        }
-        viewModel.update()        
         configureUI()
     }
     
@@ -126,6 +101,7 @@ class MainViewController: UIViewController {
         super.viewWillAppear(animated)
         configureNavigationBar()
         viewModel.delegate = self
+        viewModel.update()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -133,7 +109,7 @@ class MainViewController: UIViewController {
         super.viewWillDisappear(animated)                
     }
     
-    // MARK: Helper functions
+    // MARK: Helper methods
     func configureUI() {
         view.backgroundColor = Asset.accent2.color
         view.addSubview(tableView)
@@ -145,12 +121,23 @@ class MainViewController: UIViewController {
     
     private func configureNavigationBar() {
         title = L10n.Screens.mainTitle
-//        guard let navigationController = navigationController else {
-//            return
-//        }
         navigationController?.setToolbarHidden(true, animated: false)
         navigationController?.setNavigationBarHidden(false, animated: false)
         navigationController?.navigationBar.prefersLargeTitles = true
+        
+        if #available(iOS 13.0, *) {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.backgroundColor = Asset.accent2.color
+
+            navigationController?.navigationBar.standardAppearance = appearance
+            navigationController?.navigationBar.scrollEdgeAppearance = appearance
+            //navigationController?.navigationBar.compactAppearance = appearance
+
+        } else {
+            // Fallback on earlier versions
+            navigationController?.navigationBar.barTintColor = Asset.accent2.color
+        }
     }
     
     private func configureConstraints() {
@@ -163,14 +150,15 @@ class MainViewController: UIViewController {
             spinner.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
             
-            addCitiesButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
+            addCitiesButton.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 24),
+            addCitiesButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -24),
             addCitiesButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
             addCitiesButton.heightAnchor.constraint(equalToConstant: 44),
             
             determineLocationButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -24),
-            determineLocationButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
-            determineLocationButton.heightAnchor.constraint(equalToConstant: 44),
-            determineLocationButton.widthAnchor.constraint(equalToConstant: 44)
+            determineLocationButton.bottomAnchor.constraint(equalTo: addCitiesButton.topAnchor, constant: -60),
+            determineLocationButton.heightAnchor.constraint(equalToConstant: 60),
+            determineLocationButton.widthAnchor.constraint(equalToConstant: 60)
         ]
         NSLayoutConstraint.activate(constraints)
     }
@@ -181,8 +169,11 @@ class MainViewController: UIViewController {
     }
     
     @objc
-    private func determineLocationHandler() {
-        viewModel.performDetermingCurrentCity()
+    private func determineLocationHandler(_ sender: UIButton) {
+        if let sender = sender as? LoadingButton {
+            sender.startAnimating()
+            viewModel.performDetermingCurrentCity()
+        }
     }
     
     private func segueToChoosingCities() {
@@ -226,7 +217,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-extension MainViewController: Navigatable, Updatable, UpdatableCityData {
+extension MainViewController: Navigatable, Updatable, CurrentCityDelegate {
 
     func prepareNavigation(viewController: UIViewController) {
         navigationController?.pushViewController(viewController, animated: true)
@@ -240,9 +231,16 @@ extension MainViewController: Navigatable, Updatable, UpdatableCityData {
         }
     }
     
-    func updateCityInfo(data: CityData) {
-        cityView.configure(data: MainDataModel(text: data.name, detailText: "\(data.temp)"))
-        tableView.tableHeaderView = cityView
+    func didChangeCurrentCity(new value: CityData?) {
+        var text = L10n.City.unknown
+        var detailText = ""
+        if let data = value {
+            text = data.name
+            detailText = "\(data.temp)"
+        }
+        cityView.configure(data: MainDataModel(text: text,
+                                               detailText: detailText))        
+        determineLocationButton.stopAnimating()
     }
     
 }

@@ -66,7 +66,7 @@ class DailyWeatherManager: NSObject {
         removeAllObservers()
     }
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     
     private func prepareDailyWeatherRequest(city: City) -> URLRequest? {
         let authKey = NetworkManager.authKey
@@ -140,15 +140,3 @@ extension DailyWeatherManager {
         (Bundle.main.object(forInfoDictionaryKey: "weatherAuthKey") as? String) ?? ""
     }
 }
-
-//let currentWeather = try decoder.decode(CurrentWeather.self, from: data)
-//switch context {
-//case CoreDataManager.shared.privateObjectContext:
-//    currentWeather.choosedCity = city
-//default:
-//    let newContext = CoreDataManager.shared.privateObjectContext
-//    if let cityNew = try newContext.existingObject(with: city.objectID) as? City {
-//        currentWeather.choosedCity = cityNew
-//    }
-//}
-//CoreDataManager.shared.save(context)

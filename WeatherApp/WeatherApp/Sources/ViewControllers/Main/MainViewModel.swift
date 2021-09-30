@@ -17,7 +17,7 @@ class MainViewModel: NSObject {
     weak var delegate: (NSFetchedResultsControllerDelegate
                         & Navigatable
                         & Updatable
-                        & UpdatableCityData)? {
+                        & CurrentCityDelegate)? {
         didSet {
             fetchResultsController.delegate = delegate
         }
@@ -27,7 +27,7 @@ class MainViewModel: NSObject {
         didSet {
             if let currentCity = currentCity {
                 DispatchQueue.main.async {
-                    self.delegate?.updateCityInfo(data: currentCity)
+                    self.delegate?.didChangeCurrentCity(new: currentCity)
                 }
             }
         }
@@ -65,7 +65,7 @@ class MainViewModel: NSObject {
     }()
     // MARK: - Init    
     
-    // MARK: - Helper functions
+    // MARK: - Helper methods
     
     func update() {
         managedObjectContext.perform {

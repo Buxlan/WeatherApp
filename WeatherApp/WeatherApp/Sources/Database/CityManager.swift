@@ -12,7 +12,6 @@ import CoreLocation
 class CityManager {
     
     static let shared: CityManager = CityManager()
-    private let managedObjectContext = CoreDataManager.shared.privateObjectContext
 //    private var observers: [CurrentCityObserver] = [CurrentCityObserver]()
     var nearestCity: City?
 //    {
@@ -24,13 +23,16 @@ class CityManager {
 //            }
 //        }
 //    }
+    private var managedObjectContext: NSManagedObjectContext?
     
     // MARK: - Init
     
     // MARK: Helper fuctions
     
     func determineNearestCity(by location: CLLocation, completionHandler: @escaping (CityData?) -> Void) {
-        managedObjectContext.perform {  [weak self] in
+        let context = CoreDataManager.shared.privateObjectContext
+        managedObjectContext = context
+        context.perform {  [weak self] in
             guard let self = self else {
                 return
             }
@@ -39,7 +41,7 @@ class CityManager {
             let request = City.prepareNearestCitiesFetchRequest(latitude: latitude,
                                                                 longitude: longitude)
             do {
-                let cities = try self.managedObjectContext.fetch(request)
+                let cities = try context.fetch(request)
                 var distances = [City: CLLocationDistance]()
                 cities.forEach { (city) in
                     let cityLocation = CLLocation(latitude: Double(city.coordLatitude),
@@ -53,6 +55,10 @@ class CityManager {
                 if let first = sortedDistances.first {
                     let city = first.key
                     self.nearestCity = city
+                    city.isChosen = true
+                    city.isCurrent = true
+                    try context.save()
+                    self.managedObjectContext = nil
                     completionHandler(CityData(city: city))
                     return
                 }
@@ -61,6 +67,7 @@ class CityManager {
                 print(error)
             }
             completionHandler(nil)
+            self.managedObjectContext = nil
         }
     }
     
