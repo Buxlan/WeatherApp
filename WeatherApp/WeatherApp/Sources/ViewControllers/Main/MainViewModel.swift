@@ -16,10 +16,34 @@ class MainViewModel: NSObject {
     
     weak var delegate: (NSFetchedResultsControllerDelegate
                         & Navigatable
-                        & Updateable)? {
+                        & Updatable
+                        & UpdatableCityData)? {
         didSet {
             fetchResultsController.delegate = delegate
         }
+    }
+    
+    var currentCity: CityData? {
+        didSet {
+            if let currentCity = currentCity {
+                DispatchQueue.main.async {
+                    self.delegate?.updateCityInfo(data: currentCity)
+                }
+            }
+        }
+    }
+    
+    private var locationManager: LocationManager?
+    func performDetermingCurrentCity() {
+        DispatchQueue.main.async {
+            if self.locationManager == nil {
+                let manager = LocationManager()
+                manager.delegate = self
+                self.locationManager = manager
+            }
+            self.locationManager?.performLocateCity()            
+        }
+        
     }
     
     private var isLoading: Bool = false
@@ -42,6 +66,7 @@ class MainViewModel: NSObject {
     // MARK: - Init    
     
     // MARK: - Helper functions
+    
     func update() {
         managedObjectContext.perform {
             do {
@@ -75,4 +100,12 @@ class MainViewModel: NSObject {
             viewController.city = city
         }
     }
+}
+
+extension MainViewModel: LocationManagerDelegate {
+    
+    func didUpdateCurrentCity(_ cityData: CityData) {
+        currentCity = cityData
+    }
+    
 }

@@ -22,6 +22,7 @@ struct CityData: Decodable {
     var country: String?
     var state: String?
     var coord: Coord?
+    var temp: Float
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -30,6 +31,17 @@ struct CityData: Decodable {
         self.state = try container.decode(String?.self, forKey: .state)
         self.country = try container.decode(String?.self, forKey: .country)
         let coord = try container.decode(Coord?.self, forKey: .coord)
-        self.coord = coord        
+        self.coord = coord
+        self.temp = 0.0
+    }
+    
+    init(city: City) {
+        self.id = city.id
+        self.name = city.name
+        self.state = city.state
+        self.country = city.country
+        let coord = Coord(longitude: Double(city.coordLongitude), latitude: Double(city.coordLatitude))
+        self.coord = coord
+        self.temp = city.currentWeather?.temp ?? 0.0
     }
 }

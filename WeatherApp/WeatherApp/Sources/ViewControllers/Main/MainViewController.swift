@@ -13,12 +13,16 @@ protocol Observer: class {
     func notify()    
 }
 
-protocol Updateable: class {
+protocol Updatable: class {
     func update()
 }
 
 protocol Navigatable: class {
     func prepareNavigation(viewController: UIViewController)
+}
+
+protocol UpdatableCityData {
+    func updateCityInfo(data: CityData)
 }
 
 class MainViewController: UIViewController {
@@ -58,6 +62,22 @@ class MainViewController: UIViewController {
         return view
     }()
     
+    private lazy var determineLocationButton: UIButton = {
+        let height: CGFloat = 20
+        let view = UIButton()
+        view.contentMode = .scaleAspectFit
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.addTarget(self, action: #selector(determineLocationHandler), for: .touchUpInside)
+        view.contentEdgeInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
+        view.layer.cornerRadius = 16
+        view.clipsToBounds = true
+        let image = Asset.locationFill.image
+        view.setImage(image, for: .normal)
+        view.setTitle("Определить локацию", for: .normal)
+        view.backgroundColor = Asset.accent2.color
+        return view
+    }()
+    
     private lazy var addCitiesButton: UIButton = {
         let height: CGFloat = 20
         let view = UIButton()
@@ -66,11 +86,16 @@ class MainViewController: UIViewController {
         view.contentMode = .scaleAspectFit
         view.translatesAutoresizingMaskIntoConstraints = false
         view.contentHorizontalAlignment = .center
-        view.addTarget(self, action: #selector(addCitiesTapped), for: .touchUpInside)
+        view.addTarget(self, action: #selector(addCitiesHandler), for: .touchUpInside)
         view.contentEdgeInsets = .init(top: 8, left: 16, bottom: 8, right: 16)
         view.layer.cornerRadius = 16
         view.clipsToBounds = true
         view.backgroundColor = Asset.accent2.color
+        return view
+    }()
+    
+    private lazy var cityView: CityView = {
+        let view = CityView()
         return view
     }()
     
@@ -114,6 +139,7 @@ class MainViewController: UIViewController {
         view.addSubview(tableView)
         view.addSubview(spinner)
         view.addSubview(addCitiesButton)
+        view.addSubview(determineLocationButton)
         configureConstraints()
     }
     
@@ -140,13 +166,23 @@ class MainViewController: UIViewController {
             addCitiesButton.centerXAnchor.constraint(equalTo: view.layoutMarginsGuide.centerXAnchor),
             addCitiesButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -24),
             addCitiesButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            determineLocationButton.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -24),
+            determineLocationButton.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.centerYAnchor),
+            determineLocationButton.heightAnchor.constraint(equalToConstant: 44),
+            determineLocationButton.widthAnchor.constraint(equalToConstant: 44)
         ]
         NSLayoutConstraint.activate(constraints)
     }
     
     @objc
-    private func addCitiesTapped() {
+    private func addCitiesHandler() {
         segueToChoosingCities()
+    }
+    
+    @objc
+    private func determineLocationHandler() {
+        viewModel.performDetermingCurrentCity()
     }
     
     private func segueToChoosingCities() {
@@ -190,7 +226,7 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-extension MainViewController: Navigatable, Updateable {
+extension MainViewController: Navigatable, Updatable, UpdatableCityData {
 
     func prepareNavigation(viewController: UIViewController) {
         navigationController?.pushViewController(viewController, animated: true)
@@ -202,6 +238,11 @@ extension MainViewController: Navigatable, Updateable {
             self.tableView.reloadData()
             self.spinner.stopAnimating()
         }
+    }
+    
+    func updateCityInfo(data: CityData) {
+        cityView.configure(data: MainDataModel(text: data.name, detailText: "\(data.temp)"))
+        tableView.tableHeaderView = cityView
     }
     
 }

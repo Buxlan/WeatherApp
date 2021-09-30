@@ -14,7 +14,7 @@ class CitiesViewModel: NSObject {
     typealias ItemType = City
     typealias CellModelType = MainDataModel
     
-    weak var delegate: (NSFetchedResultsControllerDelegate & Updateable)? {
+    weak var delegate: (NSFetchedResultsControllerDelegate & Updatable)? {
         didSet {
             fetchResultsController.delegate = delegate
         }

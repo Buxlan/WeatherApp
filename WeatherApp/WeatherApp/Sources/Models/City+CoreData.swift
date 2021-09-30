@@ -31,7 +31,8 @@ class City: NSManagedObject {
         self.currentWeather = nil
         self.isChosen = false
         let latitude = Float(cityData.coord?.latitude ?? 0.0)
-        let longitude = Float(cityData.coord?.latitude ?? 0.0)
+        let longitude = Float(cityData.coord?.longitude ?? 0.0)
+//        print("lat: \(latitude), lon: \(longitude)")
         self.coordLatitude = latitude
         self.coordLongitude = longitude
     }
@@ -55,17 +56,18 @@ extension City {
     
     @nonobjc public class func prepareNearestCitiesFetchRequest(latitude: Float,
                                                                 longitude: Float) -> NSFetchRequest<City> {
-        let fetchRequest = City.prepareFetchRequest()
-        let latitudeMax: Float = Float(latitude + 1.0),
-            latitudeMin: Float = Float(latitude - 1.0),
-            longitudeMax: Float = Float(longitude + 1.0),
-            longitudeMin: Float = Float(longitude - 1.0),
-            predicate = NSPredicate(format: "coordLatitude > %f and coordLatitude < %f and coordLongitude > %f and coordLongitude < %f",
+        let request = NSFetchRequest<City>(entityName: "City")
+        request.sortDescriptors = []
+        let latitudeMax: Float = latitude + 1.0,
+            latitudeMin: Float = latitude - 1.0,
+            longitudeMax: Float = longitude + 1.0,
+            longitudeMin: Float = longitude - 1.0,
+            predicate = NSPredicate(format: "coordLatitude >= %f and coordLatitude <= %f and coordLongitude >= %f and coordLongitude <= %f",
                                     latitudeMin,
                                     latitudeMax,
                                     longitudeMin,
                                     longitudeMax)
-        fetchRequest.predicate = predicate
-        return fetchRequest
+        request.predicate = predicate
+        return request
     }
 }

@@ -12,26 +12,32 @@ import CoreLocation
 class CityManager {
     
     static let shared: CityManager = CityManager()
-//    private var observers: [Observer] = [Observer]()
-    var nearestCity: City? {
-        didSet {
-            
-        }
-    }
-    
     private let managedObjectContext = CoreDataManager.shared.privateObjectContext
+//    private var observers: [CurrentCityObserver] = [CurrentCityObserver]()
+    var nearestCity: City?
+//    {
+//        didSet {
+//            if let nearestCity = self.nearestCity {
+//                observers.forEach {
+//                    $0.didChange(currentCity: nearestCity)
+//                }
+//            }
+//        }
+//    }
     
     // MARK: - Init
     
     // MARK: Helper fuctions
     
-    func determineCity(by location: CLLocation) {
+    func determineNearestCity(by location: CLLocation, completionHandler: @escaping (CityData?) -> Void) {
         managedObjectContext.perform {  [weak self] in
             guard let self = self else {
                 return
             }
-            let request = City.prepareNearestCitiesFetchRequest(latitude: Float(location.coordinate.latitude),
-                                                                longitude: Float(location.coordinate.longitude))
+            let latitude = Float(location.coordinate.latitude)
+            let longitude = Float(location.coordinate.longitude)
+            let request = City.prepareNearestCitiesFetchRequest(latitude: latitude,
+                                                                longitude: longitude)
             do {
                 let cities = try self.managedObjectContext.fetch(request)
                 var distances = [City: CLLocationDistance]()
@@ -45,19 +51,17 @@ class CityManager {
                     $0.value < $1.value
                 }
                 if let first = sortedDistances.first {
-                    self.nearestCity = first.key
+                    let city = first.key
+                    self.nearestCity = city
+                    completionHandler(CityData(city: city))
+                    return
                 }
             } catch {
+                // error handling
                 print(error)
             }
+            completionHandler(nil)
         }
-    }
-
-    static func prepareCitiesIfNeeded() {
-        if AppController.shared.areCitiesLoaded {
-            return
-        }
-        CityDatabaseLoader.copyDatabaseFile()
     }
     
 }

@@ -143,7 +143,7 @@ extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource
     
 }
 
-extension DailyWeatherViewController: Updateable {
+extension DailyWeatherViewController: Updatable {
     func update() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {

@@ -22,6 +22,10 @@ class CoreDataManager {
                                        selector: #selector(privateObjectContextDidSave),
                                        name: NSNotification.Name.NSManagedObjectContextDidSave,
                                        object: privateObjectContext)
+//        notificationCenter.addObserver(self,
+//                                       selector: #selector(mainObjectContextDidSave),
+//                                       name: NSNotification.Name.NSManagedObjectContextDidSave,
+//                                       object: mainObjectContext)
     }
     
     deinit {
@@ -48,6 +52,8 @@ class CoreDataManager {
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
         let url = self.applicationDocumentsDirectory.appendingPathComponent("database.sqlite")
+                
+        CityDatabaseLoader().copySnapshotIfNeeded()        
         
         var failureReason = "There was an error creating or loading the application's saved data."
         do {
@@ -130,4 +136,10 @@ class CoreDataManager {
             self.mainObjectContext.mergeChanges(fromContextDidSave: notification)
         }
     }
+//    @objc private func mainObjectContextDidSave(notification: Notification) {
+//        privateObjectContext.perform {
+//            self.privateObjectContext.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+//            self.privateObjectContext.mergeChanges(fromContextDidSave: notification)
+//        }
+//    }
 }

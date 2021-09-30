@@ -12,15 +12,12 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    var locationManager: LocationManager?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Override point for customization after application launch.        
         DispatchQueue.global(qos: .userInitiated).async {
             CurrentWeatherManager.shared.update()
-        }
-        locationManager = LocationManager.shared
-        CityManager.prepareCitiesIfNeeded()
+        }        
         configureBarAppearance()
         return true
     }
@@ -107,6 +104,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print(error)
             }
         }
+    }
+    
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        print("Memory warning, need free some space")        
     }
     
     // MARK: - Helper functions

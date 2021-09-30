@@ -182,7 +182,7 @@ extension SearchResultsViewController: UISearchResultsUpdating {
     }
 }
 
-extension SearchResultsViewController: NSFetchedResultsControllerDelegate, Updateable {
+extension SearchResultsViewController: NSFetchedResultsControllerDelegate, Updatable {
     
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.beginUpdates()

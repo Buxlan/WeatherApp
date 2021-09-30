@@ -32,7 +32,7 @@ class DailyWeatherViewModel {
         return dailyWeatherList?.daily.count ?? 0
     }
     
-    weak var delegate: (Updateable)?
+    weak var delegate: (Updatable)?
     // MARK: - Init    
             
     // MARK: - Helper functions

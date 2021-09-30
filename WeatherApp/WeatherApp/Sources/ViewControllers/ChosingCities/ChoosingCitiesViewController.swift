@@ -95,10 +95,8 @@ class ChoosingCitiesViewController: UIViewController {
     }
     
     override func viewWillDisappear(_ animated: Bool) {
+        prepareDismiss()
         super.viewWillDisappear(animated)
-        viewModel.save()
-        viewModel.delegate = nil
-        view.resignFirstResponder()
     }
     
     // MARK: Helper functions
@@ -164,10 +162,16 @@ class ChoosingCitiesViewController: UIViewController {
         NSLayoutConstraint.activate(constraints)
     }
     
-    @objc
-    private func dismissTapped() {
+    func prepareDismiss() {
+        viewModel.delegate = nil
         viewModel.save()
         AppController.shared.isFirstLaunch = false
+        view.resignFirstResponder()
+    }
+    
+    @objc
+    private func dismissTapped() {
+        prepareDismiss()
         navigationController?.popViewController(animated: true)
     }
     
@@ -241,7 +245,7 @@ extension ChoosingCitiesViewController: UISearchBarDelegate {
     
 }
 
-extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Updateable {
+extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Updatable {
     
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.beginUpdates()

@@ -8,7 +8,7 @@
 import Foundation
 
 class CityFileLoader {
-    static private func loadCitiesFromFile() {
+    func perform() {
         guard let url = Bundle.main.url(forResource: "city.list", withExtension: "json") else {
             print("Cities: cannot find file with needed url")
             return
