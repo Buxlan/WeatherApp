@@ -88,7 +88,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let context = CoreDataManager.shared.mainObjectContext
         context.perform {
             do {
-                try context.save()
+                try CoreDataManager.shared.save(context)
             } catch {
                 print(error)
             }
@@ -99,7 +99,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let context = CoreDataManager.shared.mainObjectContext
         context.perform {
             do {
-                try context.save()
+                try CoreDataManager.shared.save(context)
             } catch {
                 print(error)
             }

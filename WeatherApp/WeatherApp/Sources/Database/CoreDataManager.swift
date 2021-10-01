@@ -113,10 +113,7 @@ class CoreDataManager {
                                            name: NSNotification.Name.NSManagedObjectContextDidSave,
                                            object: context)
         }
-        
-//        if context.hasChanges {
-            try context.save()
-//        }
+        try context.save()
     }
     
     @objc

@@ -50,7 +50,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let context = CoreDataManager.shared.mainObjectContext
         context.perform {
             do {
-                try context.save()
+                try CoreDataManager.shared.save(context)
             } catch {
                 print(error)
             }

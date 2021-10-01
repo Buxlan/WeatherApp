@@ -28,6 +28,24 @@ class CityManager {
     // MARK: - Init
     
     // MARK: Helper fuctions
+    func requestCurrentCity(completionHandler: @escaping (CityData?) -> Void) {
+        let context = CoreDataManager.shared.privateObjectContext
+        var cityData: CityData?
+        managedObjectContext = context
+        context.perform {
+            let request = City.prepareCurrentCityFetchRequest()
+            do {
+                let result = try context.fetch(request)
+                if let city = result.first {
+                    cityData = CityData(city: city)
+                    completionHandler(cityData)
+                }
+            } catch {
+                // error handling
+                print(error)
+            }
+        }
+    }
     
     func determineNearestCity(by location: CLLocation, completionHandler: @escaping (CityData?) -> Void) {
         let context = CoreDataManager.shared.privateObjectContext
@@ -57,7 +75,14 @@ class CityManager {
                     self.nearestCity = city
                     city.isChosen = true
                     city.isCurrent = true
-                    try context.save()
+                    do {
+                        try CoreDataManager.shared.save(context)
+//                        DispatchQueue.global(qos: .userInitiated).async {
+//                            CurrentWeatherManager.shared.update()
+//                        }
+                    } catch {
+                        print(error)
+                    }
                     self.managedObjectContext = nil
                     completionHandler(CityData(city: city))
                     return

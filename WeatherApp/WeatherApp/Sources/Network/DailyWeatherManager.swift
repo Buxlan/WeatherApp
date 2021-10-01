@@ -50,22 +50,13 @@ struct DailyWeatherList: Decodable {
 class DailyWeatherManager: NSObject {
     
     static let shared = DailyWeatherManager()
-    private var observers: [Observer] = [Observer]()
         
     private lazy var session: URLSession = {
         URLSession.shared
     }()
     
     // MARK: - Init
-    
-    override init() {
         
-    }
-    
-    deinit {
-        removeAllObservers()
-    }
-    
     // MARK: - Helper methods
     
     private func prepareDailyWeatherRequest(city: City) -> URLRequest? {
@@ -117,22 +108,7 @@ class DailyWeatherManager: NSObject {
         let task = session.dataTask(with: request,
                                     completionHandler: handler)
         task.resume()
-    }
-    
-    func addObserver(_ observer: Observer) {
-        observers.append(observer)
-    }
-    
-    func removeObserver(_ observer: Observer) {
-        if let index = observers.firstIndex(where: { $0 === observer }) {
-            observers.remove(at: index)
-        }
-    }
-    
-    private func removeAllObservers() {
-        observers.removeAll()
-    }
-    
+    }   
 }
 
 extension DailyWeatherManager {

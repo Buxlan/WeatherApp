@@ -244,10 +244,3 @@ extension MainViewController: Navigatable, Updatable, CurrentCityDelegate {
     }
     
 }
-
-extension MainViewController: NSFetchedResultsControllerDelegate {
-        
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        self.tableView.reloadData()
-    }
-}

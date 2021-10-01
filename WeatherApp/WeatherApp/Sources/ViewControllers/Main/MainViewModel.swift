@@ -13,15 +13,10 @@ class MainViewModel: NSObject {
     
     typealias ItemType = City
     typealias CellModelType = MainDataModel
-    
-    weak var delegate: (NSFetchedResultsControllerDelegate
-                        & Navigatable
+        
+    weak var delegate: (Navigatable
                         & Updatable
-                        & CurrentCityDelegate)? {
-        didSet {
-            fetchResultsController.delegate = delegate
-        }
-    }
+                        & CurrentCityDelegate)?
     
     var currentCity: CityData? {
         didSet {
@@ -49,19 +44,18 @@ class MainViewModel: NSObject {
     private var isLoading: Bool = false
     
     private var managedObjectContext = CoreDataManager.shared.mainObjectContext
+    private var currentCityCompletionHandler: ((CityData?) -> Void)?
     private lazy var fetchResultsController: NSFetchedResultsController<ItemType> = {
         let fetchRequest = ItemType.prepareFetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
         fetchRequest.predicate = NSPredicate(format: "%K == %@", "isChosen", NSNumber(true))
         fetchRequest.sortDescriptors = [sortDescriptor]
-//        let predicate = NSPredicate(format: "%K == %@", "order", order)
-//        fetchRequest.predicate = predicate
-        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+        let controller = NSFetchedResultsController(fetchRequest: fetchRequest,
                                                                   managedObjectContext: managedObjectContext,
                                                                   sectionNameKeyPath: nil,
                                                                   cacheName: nil)
-        fetchedResultsController.delegate = delegate
-        return fetchedResultsController
+        controller.delegate = self
+        return controller
     }()
     // MARK: - Init    
     
@@ -76,6 +70,14 @@ class MainViewModel: NSObject {
                 print(error)
             }
         }
+        let handler: ((CityData?) -> Void) = { [weak self] cityData in
+            guard let self = self else {
+                return
+            }
+            self.currentCity = cityData
+        }
+        currentCityCompletionHandler = handler
+        CityManager.shared.requestCurrentCity(completionHandler: handler)
     }
     
     func cellModel(at indexPath: IndexPath) -> CellModelType {
@@ -108,4 +110,11 @@ extension MainViewModel: LocationManagerDelegate {
         currentCity = cityData
     }
     
+}
+
+extension MainViewModel: NSFetchedResultsControllerDelegate {
+        
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        delegate?.update()
+    }
 }

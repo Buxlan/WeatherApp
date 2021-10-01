@@ -9,7 +9,9 @@ import CoreData
 import CoreLocation
 
 @objc(City)
-class City: NSManagedObject {    
+class City: NSManagedObject {
+    
+    private static let entityName = "City"
     
     @NSManaged public var coordLatitude: Float
     @NSManaged public var coordLongitude: Float
@@ -23,7 +25,7 @@ class City: NSManagedObject {
     
     convenience init(cityData: CityData, context: NSManagedObjectContext) {
         let manager = CoreDataManager.shared
-        self.init(entity: manager.entityForName(entityName: "City", context: context),
+        self.init(entity: manager.entityForName(entityName: Self.entityName, context: context),
                   insertInto: context)
         self.id = cityData.id
         self.name = cityData.name
@@ -50,14 +52,14 @@ extension City {
     }
     
     @nonobjc public class func prepareFetchRequest() -> NSFetchRequest<City> {
-        let request = NSFetchRequest<City>(entityName: "City")
+        let request = NSFetchRequest<City>(entityName: entityName)
         request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         return request
     }
     
     @nonobjc public class func prepareNearestCitiesFetchRequest(latitude: Float,
                                                                 longitude: Float) -> NSFetchRequest<City> {
-        let request = NSFetchRequest<City>(entityName: "City")
+        let request = NSFetchRequest<City>(entityName: entityName)
         request.sortDescriptors = []
         let latitudeMax: Float = latitude + 1.0,
             latitudeMin: Float = latitude - 1.0,
@@ -72,21 +74,31 @@ extension City {
         return request
     }
     
-    func addEntities(data: [CityData]) {
+    @nonobjc public class func prepareCurrentCityFetchRequest() -> NSFetchRequest<City> {
+        let request = NSFetchRequest<City>(entityName: entityName)
+        request.sortDescriptors = []
+        request.predicate = NSPredicate(format: "%K == %@", "isCurrent", NSNumber(true))
+        request.fetchLimit = 1
+        return request
+    }
+    
+    @nonobjc func addEntities(data: [CityData]) {
         let context = CoreDataManager.shared.privateObjectContext
         context.perform {
             do {
                 _ = data.map { (cityData) -> City in
                     City(cityData: cityData, context: context)
                 }
-                if context.hasChanges {
-                    try context.save()
-                    AppController.shared.areCitiesLoaded = true
-                }
+                
+                try CoreDataManager.shared.save(context)
+                AppController.shared.areCitiesLoaded = true
+                //                    DispatchQueue.global(qos: .userInitiated).async {
+                //                        CurrentWeatherManager.shared.update()
+                //                    }
+                
             } catch {
                 print(error)
             }
         }
-        
-    }
+    }    
 }
