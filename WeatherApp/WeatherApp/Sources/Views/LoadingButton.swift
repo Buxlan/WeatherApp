@@ -36,25 +36,21 @@ class LoadingButton: ShadowButton {
     }
     
     func startAnimating() {
-        DispatchQueue.main.async {
-            self.originalButtonText = self.titleLabel?.text
-            self.originalImage = self.image(for: .normal)
-            self.setTitle("", for: .normal)
-            self.setImage(nil, for: .normal)
-            self.showSpinning()
-        }
+        self.originalButtonText = self.titleLabel?.text
+        self.originalImage = self.image(for: .normal)
+        self.setTitle("", for: .normal)
+        self.setImage(nil, for: .normal)
+        self.showSpinning()
     }
     
     // MARK: - Helper methods
     
     func stopAnimating() {
-        DispatchQueue.main.async {
-            self.setTitle(self.originalButtonText, for: .normal)
-            self.setImage(self.originalImage, for: .normal)
-            self.activityIndicator.stopAnimating()
-            self.activityIndicator.isHidden = true
-            self.imageView?.isHidden = false
-        }
+        self.setTitle(self.originalButtonText, for: .normal)
+        self.setImage(self.originalImage, for: .normal)
+        self.activityIndicator.stopAnimating()
+        self.activityIndicator.isHidden = true
+        self.imageView?.isHidden = false
     }
     
     private func showSpinning() {

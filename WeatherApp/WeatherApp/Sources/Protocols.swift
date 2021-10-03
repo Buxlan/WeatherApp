@@ -12,13 +12,21 @@ protocol Observer: class {
 }
 
 protocol Updatable: class {
-    func update()
+    func updateUserInterface()
 }
 
 protocol Navigatable: class {
     func prepareNavigation(viewController: UIViewController)
 }
 
-protocol CurrentCityDelegate {
+protocol ViewModelStateDelegate: class {
+    func didChangeTableViewState(new state: UserInterfaceStatus)
+}
+
+protocol ViewStateDelegate: class {
+    func didChangeViewState(new state: UserInterfaceStatus)
+}
+
+protocol CurrentCityDelegate: class {
     func didChangeCurrentCity(new value: CityData?)
 }

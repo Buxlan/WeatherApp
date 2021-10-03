@@ -14,3 +14,5 @@
 "Weather.units" = "град.";
 "Controls.done" = "Готово";
 "City.unknown" = "Город неизвестен";
+"City.yourCityTitle" = "Ваш город";
+"City.chosenCities" = "Выбранные города";

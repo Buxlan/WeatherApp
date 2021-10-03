@@ -36,6 +36,7 @@ class CitiesViewModel: NSObject {
         let fetchRequest = City.prepareFetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
         fetchRequest.sortDescriptors = [sortDescriptor]
+        fetchRequest.fetchBatchSize = 30
 //        let predicate = NSPredicate(format: "%K == %@", "order", order)
 //        fetchRequest.predicate = predicate
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
@@ -59,7 +60,7 @@ class CitiesViewModel: NSObject {
             do {
                 try self.fetchResultsController.performFetch()
                 print("perform fetch")
-                self.delegate?.update()
+                self.delegate?.updateUserInterface()
             } catch {
                 print(error)
             }
@@ -92,23 +93,13 @@ class CitiesViewModel: NSObject {
             do {
                 try CoreDataManager.shared.save(self.managedObjectContext)
                 DispatchQueue.global(qos: .userInteractive).async {
-                    CurrentWeatherManager.shared.update()
+                    WeatherManager.shared.update()
                 }
             } catch {
                 print(error)
             }
         }        
-    }
-    
-//    @objc
-//    private func managedObjectContextDidSave(notification: Notification) {
-//        let context = CoreDataManager.shared.mainObjectContext
-//        context.perform {
-//            context.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
-//            context.mergeChanges(fromContextDidSave: notification)
-//        }
-//    }
-    
+    }    
 }
 
 extension CitiesViewModel: Observer {

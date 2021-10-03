@@ -12,6 +12,7 @@ class SearchResultsViewController: UITableViewController {
     
     // MARK: - Properties
     var viewModel = CitiesViewModel()
+    weak var searchController: UISearchController?
     
     private lazy var spinner: UIActivityIndicatorView = {
         let view = UIActivityIndicatorView(style: .whiteLarge)
@@ -226,8 +227,32 @@ extension SearchResultsViewController: NSFetchedResultsControllerDelegate, Updat
         tableView.endUpdates()
     }    
     
-    func update() {
+    func updateUserInterface() {
         tableView.reloadData()
     }
     
+}
+
+extension SearchResultsViewController: UISearchBarDelegate {
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+    }
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.becomeFirstResponder()
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.endEditing(true)
+        if let searchController = searchController {
+            updateSearchResults(for: searchController)
+        }
+//        navigationController?.popViewController(animated: true)
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.endEditing(true)
+        navigationController?.popViewController(animated: true)
+    }
 }

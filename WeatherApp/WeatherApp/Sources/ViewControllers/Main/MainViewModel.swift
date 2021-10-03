@@ -9,112 +9,167 @@ import Foundation
 import CoreData
 import UIKit
 
+enum UserInterfaceStatus {
+    case normal
+    case loading
+}
+
 class MainViewModel: NSObject {
     
     typealias ItemType = City
-    typealias CellModelType = MainDataModel
+    typealias ItemTypeData = CityData
+    typealias CellDataType = MainDataModel
+    typealias SectionDataType = MainDataModel
         
-    weak var delegate: (Navigatable
+    weak var delegate: (NSFetchedResultsControllerDelegate
+                        & Navigatable
                         & Updatable
-                        & CurrentCityDelegate)?
-    
-    var currentCity: CityData? {
+                        & ViewModelStateDelegate
+                        & ViewStateDelegate)? {
         didSet {
-            if let currentCity = currentCity {
-                DispatchQueue.main.async {
-                    self.delegate?.didChangeCurrentCity(new: currentCity)
-                }
-            }
+            resultsController.delegate = delegate
         }
     }
     
-    private var locationManager: LocationManager?
-    func performDetermingCurrentCity() {
-        DispatchQueue.main.async {
-            if self.locationManager == nil {
-                let manager = LocationManager()
-                manager.delegate = self
-                self.locationManager = manager
-            }
-            self.locationManager?.performLocateCity()            
-        }
-        
-    }
+    private var locationManager: LocationManager = LocationManager()
     
-    private var isLoading: Bool = false
+    private var isLocationLoading: Bool = false {
+        didSet {
+            switch isLocationLoading {
+            case true:
+                delegate?.didChangeViewState(new: .loading)
+            default:
+                delegate?.didChangeTableViewState(new: .normal)
+            }
+        }
+    }
+    var isViewModelLoading: Bool = false {
+        didSet {
+            switch isViewModelLoading {
+            case true:
+                delegate?.didChangeTableViewState(new: .loading)
+            default:
+                delegate?.didChangeTableViewState(new: .normal)
+            }
+        }
+    }
     
     private var managedObjectContext = CoreDataManager.shared.mainObjectContext
-    private var currentCityCompletionHandler: ((CityData?) -> Void)?
-    private lazy var fetchResultsController: NSFetchedResultsController<ItemType> = {
-        let fetchRequest = ItemType.prepareFetchRequest()
-        let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
-        fetchRequest.predicate = NSPredicate(format: "%K == %@", "isChosen", NSNumber(true))
-        fetchRequest.sortDescriptors = [sortDescriptor]
-        let controller = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: managedObjectContext,
-                                                                  sectionNameKeyPath: nil,
-                                                                  cacheName: nil)
-        controller.delegate = self
-        return controller
+    private lazy var resultsController: MainFetchResultsController = {
+        let resultsController = MainFetchResultsController(context: managedObjectContext)
+        resultsController.delegate = delegate
+        return resultsController
     }()
-    // MARK: - Init    
+    // MARK: - Init
     
     // MARK: - Helper methods
     
-    func update() {
+    private var currentCityCompletionHandler: (() -> Void)?
+    func performDeterminingCurrentCity() {
+        if currentCityCompletionHandler != nil {
+            // still searching current city
+            return
+        }
+        let handler: () -> Void = { [weak self] in
+            guard let self = self else {
+                return
+            }
+            DispatchQueue.main.async {
+                self.isLocationLoading = false
+                self.currentCityCompletionHandler = nil
+            }
+        }
+        isLocationLoading = true
+        currentCityCompletionHandler = handler
+        locationManager.performLocating(completionHandler: handler)
+    }
+    
+    func reloadData() {
+        guard delegate != nil else {
+            return
+        }
         managedObjectContext.perform {
             do {
-                try self.fetchResultsController.performFetch()
-                self.delegate?.update()
+                self.isViewModelLoading = true
+                try self.resultsController.performFetch()
+                self.delegate?.updateUserInterface()
+                self.isViewModelLoading = false
             } catch {
                 print(error)
             }
         }
-        let handler: ((CityData?) -> Void) = { [weak self] cityData in
-            guard let self = self else {
-                return
-            }
-            self.currentCity = cityData
-        }
-        currentCityCompletionHandler = handler
-        CityManager.shared.requestCurrentCity(completionHandler: handler)
     }
     
-    func cellModel(at indexPath: IndexPath) -> CellModelType {
+    func cellData(at indexPath: IndexPath) -> CellDataType {
         let item = self.item(at: indexPath)
         let text = item.name
         let detailText = "\(item.currentWeather?.temp ?? 0.0)"
-        let cellModel = CellModelType(text: text, detailText: detailText)
+        let cellModel = CellDataType(text: text, detailText: detailText)
         return cellModel
     }
     
-    func item(at indexPath: IndexPath) -> ItemType {
-        fetchResultsController.object(at: indexPath)
+    var numberOfSections: Int {
+        resultsController.sections?.count ?? 0
     }
     
-    var itemsCount: Int {
-        fetchResultsController.sections?[0].numberOfObjects ?? 0
+    func sectionData(section: Int) -> SectionDataType {
+        guard let sections = resultsController.sections,
+              sections.count > 0 else {
+            return SectionDataType(text: "", detailText: nil)
+        }
+        if let sectionName = resultsController.sections?[section].name {
+            switch sectionName {
+            case "0":
+                return SectionDataType(text: L10n.City.chosenCities,
+                                       detailText: nil)
+            case "1":
+                return SectionDataType(text: L10n.City.yourCityTitle,
+                                       detailText: nil)
+            default:
+                fatalError("Section with name \(sectionName) not found")
+            }
+        }
+        fatalError("Section with index \(section) not found")
+    }
+//        if sections.count == 1 {
+//            return SectionDataType(text: L10n.City.chosenCities,
+//                                   detailText: nil)
+//        } else {
+//            switch section {
+//            case 0:
+//                return SectionDataType(text: L10n.City.yourCityTitle,
+//                                       detailText: nil)
+//            default:
+//                return
+//                    SectionDataType(text: L10n.City.chosenCities,
+//                                           detailText: nil)
+//            }
+//        }
+//    }
+    
+    func itemData(at indexPath: IndexPath) -> ItemTypeData {
+        transform(from: resultsController.object(at: indexPath))
     }
     
-    func prepareNavigation(to viewController: UIViewController, _ indexPath: IndexPath) {
+    private func item(at indexPath: IndexPath) -> ItemType {
+        resultsController.object(at: indexPath)
+    }
+    
+    func numberOfRowsInSection(_ section: Int) -> Int {
+        resultsController.sections?[section].numberOfObjects ?? 0
+    }
+    
+    func prepareSegue(to viewController: UIViewController, _ indexPath: IndexPath) {
         if let viewController = viewController as? DailyWeatherViewController {
             let city = item(at: indexPath)
             viewController.city = city
         }
     }
-}
-
-extension MainViewModel: LocationManagerDelegate {
     
-    func didUpdateCurrentCity(_ cityData: CityData) {
-        currentCity = cityData
-    }
-    
-}
-
-extension MainViewModel: NSFetchedResultsControllerDelegate {
-        
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        delegate?.update()
+    private func transform(from item: ItemType?) -> ItemTypeData {
+        guard let item = item else {
+            return ItemTypeData()
+        }
+        return ItemTypeData(city: item)
     }
 }

@@ -8,77 +8,80 @@
 import CoreLocation
 
 protocol LocationManagerDelegate: class {
-    func didUpdateCurrentCity(_ cityData: CityData)
+    func locationManagerDidUpdateCurrentCity(_ cityData: CityData)
 }
 
 class LocationManager: NSObject {
     
     var currentCityData: CityData? {
         didSet {
-            completionLocationHandler = nil
+            completionLocatingHandler = nil
         }
     }
     weak var delegate: LocationManagerDelegate?
     
+    private lazy var cityManager: CityManager = CityManager()
     private let clLocationManager: CLLocationManager
-    private var completionLocationHandler: ((CityData?) -> Void)?
+    private var completionLocatingHandler: (() -> Void)?
         
     override init() {
         clLocationManager = CLLocationManager()
         super.init()
         clLocationManager.delegate = self
-    }
-    
+    }    
 }
 
 extension LocationManager {
-    func performLocateCity() {
+    func performLocating(completionHandler: (() -> Void)?) {
+        self.completionLocatingHandler = completionHandler
         if CLLocationManager.locationServicesEnabled() {
             let status = CLLocationManager.authorizationStatus()
             switch status {
             case .authorizedAlways:
                 clLocationManager.requestLocation()
+                return
             case .authorizedWhenInUse:
                 clLocationManager.requestLocation()
+                return
             case .denied:
-                print("Location denied")
+                print("Sorry, location denied go to the settings and set it manually.")
             case .notDetermined:
                 clLocationManager.requestWhenInUseAuthorization()
-                clLocationManager.requestLocation()
             case .restricted:
-                print("Location Restricted")
+                clLocationManager.requestWhenInUseAuthorization()
             @unknown default:
                 fatalError()
             }
         }
+        self.completionLocatingHandler = nil
+        completionHandler?()
+        return
     }
 }
 
 extension LocationManager: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        print("locationManager, current status: \(status.rawValue)")
+        if status == .authorizedAlways || status == .authorizedWhenInUse {
+            manager.requestLocation()
+        }
     }
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager,
+                         didUpdateLocations locations: [CLLocation]) {
         print(locations)
         guard let location = locations.first else {
             return
         }
-        let handler: ((CityData?) -> Void) = { [weak self] (cityData) in
-            guard let self = self,
-                  let cityData = cityData,
-                  let delegate = self.delegate else {
-                return
-            }
-            delegate.didUpdateCurrentCity(cityData)
-        }
-        completionLocationHandler = handler
-        CityManager.shared.determineNearestCity(by: location, completionHandler: handler)
+        cityManager.determineNearestCity(by: location,
+                                         completionHandler: completionLocatingHandler)
+        completionLocatingHandler = nil
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // Handling error
+        completionLocatingHandler?()
+        completionLocatingHandler = nil
         print(error)
     }
     

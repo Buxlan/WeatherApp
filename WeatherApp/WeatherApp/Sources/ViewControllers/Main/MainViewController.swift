@@ -7,7 +7,7 @@
 
 // Старался делать согласно паттерна MVVM, применяя правило, что VC должен знать о
 // Инстанцируется из пустого storyboard
-// Весь интерфейс написан программно.
+// Интерфейс написан программно.
 
 import UIKit
 import Foundation
@@ -35,9 +35,7 @@ class MainViewController: UIViewController {
         view.estimatedRowHeight = UITableView.automaticDimension
         view.register(MainViewTableCell.self,
                       forCellReuseIdentifier: "cell")
-        
-        view.tableHeaderView = cityView
-        didChangeCurrentCity(new: nil)
+                
         view.tableFooterView = UIView()
         
         return view
@@ -101,7 +99,7 @@ class MainViewController: UIViewController {
         super.viewWillAppear(animated)
         configureNavigationBar()
         viewModel.delegate = self
-        viewModel.update()
+        viewModel.reloadData()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -172,36 +170,21 @@ class MainViewController: UIViewController {
     private func determineLocationHandler(_ sender: UIButton) {
         if let sender = sender as? LoadingButton {
             sender.startAnimating()
-            viewModel.performDetermingCurrentCity()
+            viewModel.performDeterminingCurrentCity()
         }
     }
     
     private func segueToChoosingCities() {
         let vc = ChoosingCitiesViewController()
         vc.modalTransitionStyle = .crossDissolve
-        vc.dismissAction = { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.spinner.startAnimating()
-            self.viewModel.update()
-            self.spinner.stopAnimating()
-        }
         navigationController?.pushViewController(vc, animated: true)
     }
 }
 
 extension MainViewController: UITableViewDelegate, UITableViewDataSource {
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let vc = DailyWeatherViewController()
-        viewModel.prepareNavigation(to: vc, indexPath)
-        navigationController?.pushViewController(vc, animated: true)
-    }
-    
+        
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let model = viewModel.cellModel(at: indexPath)
+        let model = viewModel.cellData(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         switch cell {
         case let cell as Configurable:
@@ -212,35 +195,114 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
     
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return viewModel.numberOfSections
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.itemsCount
+        viewModel.numberOfRowsInSection(section)
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        let data = viewModel.sectionData(section: section)
+        return data.text
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let vc = DailyWeatherViewController()
+        viewModel.prepareSegue(to: vc, indexPath)
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
-extension MainViewController: Navigatable, Updatable, CurrentCityDelegate {
-
+extension MainViewController: Navigatable,
+                              Updatable,
+                              ViewModelStateDelegate,
+                              ViewStateDelegate {
+    func didChangeViewState(new status: UserInterfaceStatus) {
+        switch status {
+        case .loading:
+            self.determineLocationButton.startAnimating()
+        default:
+            self.determineLocationButton.stopAnimating()
+        }
+    }
+    
+    func didChangeTableViewState(new status: UserInterfaceStatus) {
+        DispatchQueue.main.async {
+            switch status {
+            case .loading:
+                self.spinner.startAnimating()
+            default:
+                self.spinner.stopAnimating()
+            }
+        }
+    }
+    
+    func updateUserInterface() {
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+    
     func prepareNavigation(viewController: UIViewController) {
         navigationController?.pushViewController(viewController, animated: true)
     }
+}
+
+extension MainViewController: NSFetchedResultsControllerDelegate {
     
-    func update() {
-        DispatchQueue.main.async {
-            self.spinner.startAnimating()
-            self.tableView.reloadData()
-            self.spinner.stopAnimating()
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.beginUpdates()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                    didChange sectionInfo: NSFetchedResultsSectionInfo,
+                    atSectionIndex sectionIndex: Int,
+                    for type: NSFetchedResultsChangeType) {
+        switch type {
+        case .insert:
+            let indexSet = IndexSet(integer: sectionIndex)
+            tableView.insertSections(indexSet, with: .automatic)
+        case .delete:
+            let indexSet = IndexSet(integer: sectionIndex)
+            tableView.deleteSections(indexSet, with: .automatic)
+        default:
+            print("Move or update: need to do something with that")
         }
     }
     
-    func didChangeCurrentCity(new value: CityData?) {
-        var text = L10n.City.unknown
-        var detailText = ""
-        if let data = value {
-            text = data.name
-            detailText = "\(data.temp)"
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                tableView.insertRows(at: [indexPath], with: .fade)
+            }
+        case .delete:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+        case .update:
+            if let indexPath = indexPath,
+               let cell = tableView.cellForRow(at: indexPath) as? Configurable {
+                let data = viewModel.cellData(at: indexPath)
+                cell.configure(data: data)
+            }
+        case .move:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+            
+            if let newIndexPath = newIndexPath {
+                tableView.insertRows(at: [newIndexPath], with: .fade)
+            }
+        @unknown default:
+            fatalError()
         }
-        cityView.configure(data: MainDataModel(text: text,
-                                               detailText: detailText))        
-        determineLocationButton.stopAnimating()
     }
-    
+        
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.endUpdates()
+    }
 }

@@ -7,29 +7,9 @@
 
 import UIKit
 
-
-
-//struct CellWeatherDataModel: DataModel {
-//    var text: String
-//    var detailText: String
-//
-//    init(city: City) {
-//        text = city.name
-//        let weather = city.currentWeather?.temp ?? 0.0
-//        detailText = "\(weather)"
-//    }
-//
-//    init(dailyWeather: DailyWeather) {
-//        let dateFormatter = DateFormatter()
-//        dateFormatter.dateFormat = "dd/MM/YY"
-//        text = dateFormatter.string(from: dailyWeather.dt)
-//        detailText = "\(dailyWeather.temp.day)"
-//    }
-//}
-
 protocol Configurable {
     static var reuseIdentifier: String { get }
-    func configure(data: MainDataModel)
+    func configure(data: DataModel)
 }
 extension Configurable {
     static var reuseIdentifier: String { String(describing: Self.self) }
@@ -59,7 +39,7 @@ class MainViewTableCell: UITableViewCell, Configurable {
     }
     
     // MARK: - Helper methods
-    func configure(data: MainDataModel) {
+    func configure(data: DataModel) {
         textLabel?.text = data.text
         detailTextLabel?.text = data.detailText
     }

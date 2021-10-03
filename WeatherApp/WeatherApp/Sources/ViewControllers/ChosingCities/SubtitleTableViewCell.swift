@@ -34,7 +34,7 @@ class SubtitleTableViewCell: UITableViewCell, Configurable {
     }
     
     // MARK: - Helper methods
-    func configure(data: MainDataModel) {
+    func configure(data: DataModel) {
         textLabel?.text = data.text
         detailTextLabel?.text = data.detailText
     }

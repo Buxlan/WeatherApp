@@ -82,6 +82,17 @@ extension City {
         return request
     }
     
+    @nonobjc public class func prepareCitiesForUpdateRequest() -> NSFetchRequest<City> {
+        let request = NSFetchRequest<City>(entityName: entityName)
+        request.sortDescriptors = []
+        request.predicate = NSPredicate(format: "%K == %@ OR %K == %@",
+                                        "isChosen",
+                                        NSNumber(true),
+                                        "isCurrent",
+                                        NSNumber(true))
+        return request
+    }
+    
     @nonobjc func addEntities(data: [CityData]) {
         let context = CoreDataManager.shared.privateObjectContext
         context.perform {

@@ -11,31 +11,42 @@ import CoreLocation
 
 class CityManager {
     
-    static let shared: CityManager = CityManager()
-//    private var observers: [CurrentCityObserver] = [CurrentCityObserver]()
-    var nearestCity: City?
-//    {
-//        didSet {
-//            if let nearestCity = self.nearestCity {
-//                observers.forEach {
-//                    $0.didChange(currentCity: nearestCity)
-//                }
-//            }
-//        }
-//    }
-    private var managedObjectContext: NSManagedObjectContext?
+    // MARK: - Properties
+
+    private var managedObjectContext: NSManagedObjectContext
     
     // MARK: - Init
     
+    init() {
+        self.managedObjectContext = CoreDataManager.shared.privateObjectContext
+    }
+    
+    init(context: NSManagedObjectContext) {
+        self.managedObjectContext = context
+    }
+    
     // MARK: Helper fuctions
-    func requestCurrentCity(completionHandler: @escaping (CityData?) -> Void) {
-        let context = CoreDataManager.shared.privateObjectContext
+    
+    func fetchRequestCitiesForWeatherUpdate(completionHandler: @escaping ([City]) -> Void) {
+        managedObjectContext.perform {
+            let request = City.prepareCitiesForUpdateRequest()
+            do {
+                let result = try self.managedObjectContext.fetch(request)
+                completionHandler(result)
+            } catch {
+                // error handling
+                print(error)
+            }
+            return completionHandler([])
+        }
+    }
+    
+    func fetchRequestCurrentCity(completionHandler: @escaping (CityData?) -> Void) {
         var cityData: CityData?
-        managedObjectContext = context
-        context.perform {
+        managedObjectContext.perform {
             let request = City.prepareCurrentCityFetchRequest()
             do {
-                let result = try context.fetch(request)
+                let result = try self.managedObjectContext.fetch(request)
                 if let city = result.first {
                     cityData = CityData(city: city)
                     completionHandler(cityData)
@@ -45,12 +56,11 @@ class CityManager {
                 print(error)
             }
         }
-    }
-    
-    func determineNearestCity(by location: CLLocation, completionHandler: @escaping (CityData?) -> Void) {
-        let context = CoreDataManager.shared.privateObjectContext
-        managedObjectContext = context
-        context.perform {  [weak self] in
+    }   
+        
+    func determineNearestCity(by location: CLLocation,
+                              completionHandler: (() -> Void)?) {
+        managedObjectContext.perform {  [weak self] in
             guard let self = self else {
                 return
             }
@@ -59,7 +69,7 @@ class CityManager {
             let request = City.prepareNearestCitiesFetchRequest(latitude: latitude,
                                                                 longitude: longitude)
             do {
-                let cities = try context.fetch(request)
+                let cities = try self.managedObjectContext.fetch(request)
                 var distances = [City: CLLocationDistance]()
                 cities.forEach { (city) in
                     let cityLocation = CLLocation(latitude: Double(city.coordLatitude),
@@ -72,27 +82,23 @@ class CityManager {
                 }
                 if let first = sortedDistances.first {
                     let city = first.key
-                    self.nearestCity = city
-                    city.isChosen = true
                     city.isCurrent = true
                     do {
-                        try CoreDataManager.shared.save(context)
-//                        DispatchQueue.global(qos: .userInitiated).async {
-//                            CurrentWeatherManager.shared.update()
-//                        }
+                        try CoreDataManager.shared.save(self.managedObjectContext)
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            WeatherManager.shared.update(at: city.objectID)
+                        }
                     } catch {
                         print(error)
                     }
-                    self.managedObjectContext = nil
-                    completionHandler(CityData(city: city))
+                    completionHandler?()
                     return
                 }
             } catch {
                 // error handling
                 print(error)
             }
-            completionHandler(nil)
-            self.managedObjectContext = nil
+            completionHandler?()
         }
     }
     

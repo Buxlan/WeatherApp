@@ -118,7 +118,7 @@ class DailyWeatherViewController: UIViewController {
 extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = viewModel.item(at: indexPath)
+        let item = viewModel.itemData(at: indexPath)
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         switch cell {
         case let cell as Configurable:
@@ -134,7 +134,7 @@ extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.itemsCount
+        return viewModel.numberOfRowsInSection(section)
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -144,13 +144,84 @@ extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource
 }
 
 extension DailyWeatherViewController: Updatable {
-    func update() {
+    func updateUserInterface() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
                 return
             }
             self.spinner.startAnimating()
             self.tableView.reloadData()
+        }
+    }
+}
+
+extension DailyWeatherViewController: NSFetchedResultsControllerDelegate {
+    
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.beginUpdates()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                    didChange sectionInfo: NSFetchedResultsSectionInfo,
+                    atSectionIndex sectionIndex: Int,
+                    for type: NSFetchedResultsChangeType) {
+        switch type {
+        case .insert:
+            let indexSet = IndexSet(integer: sectionIndex)
+            tableView.insertSections(indexSet, with: .automatic)
+        case .delete:
+            let indexSet = IndexSet(integer: sectionIndex)
+            tableView.deleteSections(indexSet, with: .automatic)
+        default:
+            print("Move or update: need to do something with that")
+        }
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
+            if let indexPath = newIndexPath {
+                tableView.insertRows(at: [indexPath], with: .fade)
+            }
+        case .delete:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+        case .update:
+            if let indexPath = indexPath,
+               let cell = tableView.cellForRow(at: indexPath) as? Configurable {
+                let data = viewModel.itemData(at: indexPath)
+                cell.configure(data: data)
+            }
+        case .move:
+            if let indexPath = indexPath {
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            }
+            
+            if let newIndexPath = newIndexPath {
+                tableView.insertRows(at: [newIndexPath], with: .fade)
+            }
+        @unknown default:
+            fatalError()
+        }
+    }
+        
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        tableView.endUpdates()
+    }
+}
+
+extension DailyWeatherViewController: ViewModelStateDelegate {
+    func didChangeTableViewState(new state: UserInterfaceStatus) {
+        DispatchQueue.main.async {
+            switch state {
+            case .loading:
+                self.spinner.startAnimating()
+            case .normal:
+                self.spinner.stopAnimating()
+            @unknown default:
+                fatalError("Unknown table view state \(state)")
+            }
         }
     }
 }

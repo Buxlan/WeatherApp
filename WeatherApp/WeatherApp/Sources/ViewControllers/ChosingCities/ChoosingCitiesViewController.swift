@@ -10,9 +10,7 @@ import CoreData
 
 class ChoosingCitiesViewController: UIViewController {
 
-    // MARK: - Properties
-    var dismissAction: (() -> Void)?
-    
+    // MARK: - Properties    
     typealias CellType = SubtitleTableViewCell
     private var viewModel = CitiesViewModel()
             
@@ -37,8 +35,6 @@ class ChoosingCitiesViewController: UIViewController {
         view.tableHeaderView = UIView()
         view.tableFooterView = UIView()
         
-        view.prefetchDataSource = self
-        
         return view
     }()
     private lazy var searchResultsViewController: SearchResultsViewController = {
@@ -55,7 +51,14 @@ class ChoosingCitiesViewController: UIViewController {
         if let textField = view.searchBar.value(forKey: "searchField") as? UITextField {
             textField.backgroundColor = .white
             textField.tintColor = .white
+            textField.isOpaque = true
         }
+        guard view.searchBar.subviews.count > 0 else {
+            print("Warning: seach bar view has no subviews. It's very strange!")
+            return view
+        }
+        view.searchBar.subviews[0].backgroundColor = Asset.accent2.color
+        view.searchBar.subviews[0].tintColor = .white
         return view
     }()
     
@@ -104,7 +107,6 @@ class ChoosingCitiesViewController: UIViewController {
     // MARK: Helper methods
     
     override func viewDidDisappear(_ animated: Bool) {
-        dismissAction?()
         super.viewDidDisappear(animated)
     }
         
@@ -121,9 +123,10 @@ class ChoosingCitiesViewController: UIViewController {
     private func configureSearchController() {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
-        searchController.searchBar.delegate = self
+        searchController.searchBar.delegate = searchResultsViewController
         searchController.searchBar.showsCancelButton = true
         searchController.searchBar.showsSearchResultsButton = true
+        searchController.searchBar.isOpaque = true
         searchController.searchBar.barTintColor = .black
 //        searchController.searchBar.searchTextField.backgroundColor = .white
         definesPresentationContext = true
@@ -188,11 +191,7 @@ class ChoosingCitiesViewController: UIViewController {
     
 }
 
-extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching {
-    
-    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        
-    }
+extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSource {    
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
@@ -228,24 +227,6 @@ extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSour
         cell.accessoryType = cell.isSelected ? .checkmark : .none
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
-}
-
-extension ChoosingCitiesViewController: UISearchBarDelegate {
-    
-    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        searchBar.becomeFirstResponder()
-    }
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.endEditing(true)
-        navigationController?.popViewController(animated: true)
-    }
-    
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.endEditing(true)
-        navigationController?.popViewController(animated: true)
-    }
-    
 }
 
 extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Updatable {
@@ -292,7 +273,7 @@ extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Upda
         tableView.endUpdates()
     }
     
-    func update() {
+    func updateUserInterface() {
         tableView.reloadData()
     }
 }

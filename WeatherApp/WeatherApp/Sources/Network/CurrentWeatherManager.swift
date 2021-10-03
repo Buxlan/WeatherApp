@@ -14,7 +14,6 @@ class CurrentWeatherManager: NSObject {
     var isNeededToUpdate: Bool = false
     
     static let shared = CurrentWeatherManager()
-    private var observers: [Observer] = [Observer]()
     private lazy var session: URLSession = {
         URLSession.shared
     }()
@@ -22,13 +21,12 @@ class CurrentWeatherManager: NSObject {
     
     // MARK: - Init
     
-    override init() {
+    private override init() {
         super.init()
         startTimer()
     }
     
     deinit {
-        removeAllObservers()
         timer?.invalidate()
         timer = nil
     }
@@ -73,7 +71,11 @@ class CurrentWeatherManager: NSObject {
         context.perform {            
             do {
                 let fetchRequest = City.prepareFetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "%K == %@", "isChosen", NSNumber(true))
+                fetchRequest.predicate = NSPredicate(format: "%K == %@ OR %K == %@",
+                                                     "isChosen",
+                                                     NSNumber(true),
+                                                     "isCurrent",
+                                                     NSNumber(true))
                 let objects = try context.fetch(fetchRequest)
                 objects.forEach { city in
                     let handler: (CurrentWeatherList) -> Void = { currentWeatherData in
@@ -90,13 +92,33 @@ class CurrentWeatherManager: NSObject {
                     self.fetchRequestCurrentWeather(at: city,
                                                     completionHandler: handler)
                 }
-                
-                self.observers.forEach {
-                    $0.notify()
-                }
             } catch {
                 print(error)
             }
+        }
+        
+    }
+    
+    func update(at cityObjectID: NSManagedObjectID) {
+        let context = CoreDataManager.shared.privateObjectContext
+        context.perform {
+            let object = context.object(with: cityObjectID)
+            guard let city = object as? City else {
+                return
+            }
+            let handler: (CurrentWeatherList) -> Void = { currentWeatherData in
+                let currentWeather = CurrentWeather(currentWeatherData: currentWeatherData.data,
+                                                    context: context)
+                currentWeather.city = city
+                do {
+                    try CoreDataManager.shared.save(context)
+                } catch {
+                    print(error)
+                }
+            }
+            self.completionHandler = handler
+            self.fetchRequestCurrentWeather(at: city,
+                                            completionHandler: handler)
         }
         
     }
@@ -137,20 +159,6 @@ class CurrentWeatherManager: NSObject {
         let task = session.dataTask(with: request,
                                     completionHandler: handler)
         task.resume()
-    }
-    
-    func addObserver(_ observer: Observer) {
-        observers.append(observer)
-    }
-    
-    func removeObserver(_ observer: Observer) {
-        if let index = observers.firstIndex(where: { $0 === observer }) {
-            observers.remove(at: index)
-        }
-    }
-    
-    private func removeAllObservers() {
-        observers.removeAll()
     }
     
     @objc

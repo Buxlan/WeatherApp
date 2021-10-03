@@ -1,5 +1,5 @@
 //
-//  WeatherByDateViewModel.swift
+//  DailyWeatherViewModel.swift
 //  WeatherApp
 //
 //  Created by  Buxlan on 9/25/21.
@@ -8,63 +8,84 @@
 import Foundation
 import CoreData
 
-class DailyWeatherViewModel {
-        
-    // MARK: - Properties
+class DailyWeatherViewModel: NSObject {
+    
+    typealias ItemType = DailyWeather
+    typealias ItemTypeData = DailyWeatherDataModel
+    
     var city: City? {
         didSet {
-            update()
-        }
+            resultsController.predicateItem = city
+        }        
     }
     
-    typealias ItemType = City
-    typealias CellModelType = MainDataModel
-    
-    var dailyWeatherList: DailyWeatherList? {
+    weak var delegate: (NSFetchedResultsControllerDelegate
+                        & Updatable
+                        & ViewModelStateDelegate)? {
         didSet {
-            delegate?.update()
-            completionTaskHandler = nil
+            resultsController.delegate = delegate
         }
     }
     
-    var completionTaskHandler: ((DailyWeatherList?) -> Void)?
-    var itemsCount: Int {
-        return dailyWeatherList?.daily.count ?? 0
+    var isViewModelLoading: Bool = false {
+        didSet {
+            switch isViewModelLoading {
+            case true:
+                delegate?.didChangeTableViewState(new: .loading)
+            default:
+                delegate?.didChangeTableViewState(new: .normal)
+            }
+        }
     }
     
-    weak var delegate: (Updatable)?
-    // MARK: - Init    
-            
+    private var managedObjectContext = CoreDataManager.shared.mainObjectContext
+    private lazy var resultsController: DailyWeatherResultsController = {
+        let resultsController = DailyWeatherResultsController(context: managedObjectContext)
+        resultsController.delegate = delegate
+        resultsController.predicateItem = city
+        return resultsController
+    }()
+    // MARK: - Init
+    
     // MARK: - Helper methods
-    func update() {
-        guard let city = city else {
+    
+    func reloadData() {
+        guard delegate != nil else {
             return
         }
-        let completionHandler: (DailyWeatherList?) -> Void = { [weak self] list in
-            self?.dailyWeatherList = list
+        managedObjectContext.perform {
+            do {
+                self.isViewModelLoading = true
+                try self.resultsController.performFetch()
+                self.delegate?.updateUserInterface()
+                self.isViewModelLoading = false
+            } catch {
+                print(error)
+            }
         }
-        completionTaskHandler = completionHandler
-        DailyWeatherManager.shared.updateDailyWeather(at: city, completionHandler: completionHandler)
+    }    
+    
+    var numberOfSections: Int {
+        resultsController.sections?.count ?? 0
     }
     
-    func item(at indexPath: IndexPath) -> CellModelType {
-        if let dailyWeather = dailyWeatherList?.daily[indexPath.row] {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "dd/MM/YY"
-            let text = dateFormatter.string(from: dailyWeather.dt)
-            let detailText = "\(dailyWeather.temp.day)"
-            return CellModelType(text: text, detailText: detailText)
-        } else {
-            return CellModelType(text: "Unknown", detailText: "--??--")
+    func itemData(at indexPath: IndexPath) -> ItemTypeData {
+        transform(from: resultsController.object(at: indexPath))
+    }
+    
+    private func item(at indexPath: IndexPath) -> ItemType {
+        resultsController.object(at: indexPath)
+    }
+    
+    func numberOfRowsInSection(_ section: Int) -> Int {
+        resultsController.sections?[section].numberOfObjects ?? 0
+    }
+    
+    private func transform(from item: ItemType?) -> ItemTypeData {
+        guard let item = item else {
+            return ItemTypeData()
         }
+        let data = DailyWeatherData(data: item)
+        return ItemTypeData(data: data)
     }
-    
-}
-
-extension DailyWeatherViewModel: Observer {
-    
-    func notify() {
-        self.update()
-    }
-    
 }

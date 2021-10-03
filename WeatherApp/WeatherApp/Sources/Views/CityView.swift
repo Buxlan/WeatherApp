@@ -49,7 +49,7 @@ class CityView: UIView, Configurable {
     
     // MARK: - Helper methods
     
-    func configure(data: MainDataModel) {
+    func configure(data: DataModel) {
         cityNameLabel.text = data.text
         temperatureLabel.text = data.detailText
     }

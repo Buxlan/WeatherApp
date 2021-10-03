@@ -9,14 +9,21 @@
         <attribute name="isCurrent" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="state" optional="YES" attributeType="String"/>
-        <relationship name="currentWeather" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="CurrentWeather" inverseName="city" inverseEntity="CurrentWeather"/>
+        <relationship name="currentWeather" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CurrentWeather" inverseName="city" inverseEntity="CurrentWeather"/>
+        <relationship name="dailyWeather" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="DailyWeather" inverseName="city" inverseEntity="DailyWeather"/>
     </entity>
     <entity name="CurrentWeather" representedClassName="CurrentWeather" syncable="YES">
         <attribute name="temp" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <relationship name="city" optional="YES" maxCount="1" deletionRule="No Action" destinationEntity="City" inverseName="currentWeather" inverseEntity="City"/>
+        <relationship name="city" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="City" inverseName="currentWeather" inverseEntity="City"/>
+    </entity>
+    <entity name="DailyWeather" representedClassName="DailyWeather" syncable="YES">
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="temp" attributeType="Float" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="city" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="City" inverseName="dailyWeather" inverseEntity="City"/>
     </entity>
     <elements>
+        <element name="City" positionX="-54" positionY="-9" width="128" height="179"/>
         <element name="CurrentWeather" positionX="-63" positionY="-18" width="128" height="59"/>
-        <element name="City" positionX="-54" positionY="-9" width="128" height="164"/>
+        <element name="DailyWeather" positionX="-63" positionY="63" width="128" height="74"/>
     </elements>
 </model>

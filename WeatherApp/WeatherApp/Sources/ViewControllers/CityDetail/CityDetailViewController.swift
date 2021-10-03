@@ -5,8 +5,8 @@
 //  Created by  Buxlan on 9/16/21.
 //
 
-// Яркий пример massive view controller,
-// который хотелось бы переделать в MVVM паттерн, но в рамках тестового задания делать это нецелесообразно.
+// Яркий пример massive view controller. Как-то тк вышло, что я не сделал для него изначально модель, поэтому так получилось.
+// Надо бы рефакторить в MVVM паттерн, но в рамках тестового задания делать это нецелесообразно.
 // примеры использования мною паттерна MVVM приведены в других VC
 // Инстанцируется из storyboard
 
@@ -38,7 +38,7 @@ class CityDetailViewController: UIViewController {
         managedObjectContext.insert(city)
         city.isChosen = true
         return city
-    }()
+    }()    
     
     // MARK: Init
     
@@ -126,7 +126,7 @@ class CityDetailViewController: UIViewController {
             do {
                 try CoreDataManager.shared.save(self.managedObjectContext)
                 DispatchQueue.global(qos: .userInitiated).async {
-                    CurrentWeatherManager.shared.update()
+                    WeatherManager.shared.update()
                 }
             } catch {
                 print(error)

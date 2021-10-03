@@ -39,6 +39,18 @@ struct CityData: Decodable {
         self.isCurrent = false
     }
     
+    init() {
+        self.id = 0
+        self.name = ""
+        self.state = nil
+        self.country = nil
+        let coord = Coord(longitude: 0.0, latitude: 0.0)
+        self.coord = coord
+        self.temp = 0
+        self.isChosen = false
+        self.isCurrent = false
+    }
+    
     init(city: City) {
         self.id = city.id
         self.name = city.name
