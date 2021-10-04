@@ -159,7 +159,7 @@ class CityDetailViewController: UIViewController {
     
     @IBAction func cancelHandle(_ sender: Any) {
         discard()
-        dismiss(animated: true, completion: nil)
+//        dismiss(animated: true, completion: nil)
     }
     
     private func updateAppearance(for textField: UITextField, state: TextFieldState) {
