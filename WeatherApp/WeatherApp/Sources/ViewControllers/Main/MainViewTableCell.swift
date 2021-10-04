@@ -7,14 +7,6 @@
 
 import UIKit
 
-protocol Configurable {
-    static var reuseIdentifier: String { get }
-    func configure(data: DataModel)
-}
-extension Configurable {
-    static var reuseIdentifier: String { String(describing: Self.self) }
-}
-
 class MainViewTableCell: UITableViewCell, Configurable {
 //
 //    private lazy var tempLabel: UILabel = {

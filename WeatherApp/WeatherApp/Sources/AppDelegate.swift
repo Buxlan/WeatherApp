@@ -12,7 +12,7 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-    var weatherManager: WeatherManager = WeatherManager()
+    var scheduledWeatherManager: ScheduledWeatherManager = ScheduledWeatherManager()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.        
@@ -117,6 +117,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UINavigationBar.appearance().backgroundColor = Asset.accent2.color
         UINavigationBar.appearance().tintColor = Asset.main0.color
         UINavigationBar.appearance().barTintColor = Asset.other1.color
+        
+        let cancelButtonAttributes = [NSAttributedString.Key.foregroundColor: UIColor.black]
+        UIBarButtonItem.appearance().setTitleTextAttributes(cancelButtonAttributes, for: .normal)
                 
         let attr = [NSAttributedString.Key.foregroundColor: UIColor.black]
         UITabBarItem.appearance().setTitleTextAttributes(attr, for: .selected)

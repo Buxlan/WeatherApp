@@ -20,15 +20,6 @@ class CitiesViewModel: NSObject {
         }
     }
     
-    override init() {
-        super.init()
-        let notificationCenter = NotificationCenter.default
-//        notificationCenter.addObserver(self,
-//                                       selector: #selector(managedObjectContextDidSave),
-//                                       name: NSNotification.Name.NSManagedObjectContextDidSave,
-//                                       object: managedObjectContext)
-    }
-    
     private var isLoading: Bool = false
     
     private var managedObjectContext = CoreDataManager.shared.mainObjectContext
@@ -36,7 +27,7 @@ class CitiesViewModel: NSObject {
         let fetchRequest = City.prepareFetchRequest()
         let sortDescriptor = NSSortDescriptor(key: "name", ascending: true)
         fetchRequest.sortDescriptors = [sortDescriptor]
-        fetchRequest.fetchBatchSize = 30
+//        fetchRequest.fetchBatchSize = 1000
 //        let predicate = NSPredicate(format: "%K == %@", "order", order)
 //        fetchRequest.predicate = predicate
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
@@ -59,7 +50,6 @@ class CitiesViewModel: NSObject {
         managedObjectContext.perform {
             do {
                 try self.fetchResultsController.performFetch()
-                print("perform fetch")
                 self.delegate?.updateUserInterface()
             } catch {
                 print(error)
@@ -95,6 +85,7 @@ class CitiesViewModel: NSObject {
                 DispatchQueue.global(qos: .userInteractive).async {
                     WeatherManager.shared.update()
                 }
+                AppController.shared.isFirstLaunch = false
             } catch {
                 print(error)
             }

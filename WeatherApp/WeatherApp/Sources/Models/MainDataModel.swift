@@ -35,6 +35,6 @@ struct DailyWeatherDataModel: DataModel {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd/MM/YY"
         self.text = dateFormatter.string(from: data.date)
-        self.detailText = "\(data.temp)"
+        self.detailText = "\(data.temp.day)"
     }
 }

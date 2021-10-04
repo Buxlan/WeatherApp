@@ -8,46 +8,10 @@
 import Foundation
 import CoreData
 
-struct CurrentWeatherList: Decodable {
-    
-    enum CodingKeys: CodingKey {
-        case main
-    }
-    
-    var data: CurrentWeatherData
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        var temp = CurrentWeatherData(temp: 0.0)
-        do {
-            temp = try container.decode(CurrentWeatherData.self, forKey: .main)
-        } catch {
-            print("Warning: cannot decode weather data for city: \(error)")
-        }
-        data = temp
-    }
-}
-
-struct CurrentWeatherData: Decodable {
-    var temp: Float
-}
-
 @objc(CurrentWeather)
 class CurrentWeather: NSManagedObject {
-    
-    enum CodingKeys: CodingKey {
-        case main
-    }
-    
-    enum MainSectionCodingKeys: String, CodingKey {
-        case temp
-        case pressure
-        case humidity
-        case tempMin = "temp_min"
-        case tempMax = "temp_max"
-    }
-    
-    @NSManaged var city: City?
+        
+    @NSManaged var city: City
     @NSManaged var temp: Float
     
     convenience init(insertInto context: NSManagedObjectContext?) {
@@ -60,11 +24,14 @@ class CurrentWeather: NSManagedObject {
         super.init(entity: entity, insertInto: context)
     }
     
-    convenience init(currentWeatherData: CurrentWeatherData, context: NSManagedObjectContext) {
+    convenience init(city: City,
+                     currentWeatherData: CurrentWeatherData,
+                     context: NSManagedObjectContext) {
         let manager = CoreDataManager.shared
         self.init(entity: manager.entityForName(entityName: "CurrentWeather", context: context),
                   insertInto: context)
         self.temp = currentWeatherData.temp
+        self.city = city
     }
     
     // MARK: Helper methods

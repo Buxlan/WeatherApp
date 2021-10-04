@@ -75,6 +75,7 @@ class DailyWeatherViewController: UIViewController {
         super.viewWillAppear(animated)
         configureNavigationBar()
         viewModel.delegate = self
+        viewModel.reloadData()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -88,6 +89,7 @@ class DailyWeatherViewController: UIViewController {
         view.addSubview(tableView)
         view.addSubview(spinner)
         configureConstraints()
+        configureGestures()
     }
     
     private func configureNavigationBar() {
@@ -112,7 +114,6 @@ class DailyWeatherViewController: UIViewController {
         ]
         NSLayoutConstraint.activate(constraints)
     }
-    
 }
 
 extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource {
@@ -124,13 +125,13 @@ extension DailyWeatherViewController: UITableViewDelegate, UITableViewDataSource
         case let cell as Configurable:
             cell.configure(data: item)
         default:
-            print("Strange cell (is not Configurable)")
+            print("Warning: Strange cell (is not Configurable)")
         }
         return cell
     }
         
     func numberOfSections(in tableView: UITableView) -> Int {
-        1
+        viewModel.numberOfSections
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -149,7 +150,6 @@ extension DailyWeatherViewController: Updatable {
             guard let self = self else {
                 return
             }
-            self.spinner.startAnimating()
             self.tableView.reloadData()
         }
     }
@@ -219,9 +219,20 @@ extension DailyWeatherViewController: ViewModelStateDelegate {
                 self.spinner.startAnimating()
             case .normal:
                 self.spinner.stopAnimating()
-            @unknown default:
-                fatalError("Unknown table view state \(state)")
             }
         }
+    }
+}
+
+extension DailyWeatherViewController {
+    private func configureGestures() {
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipes(_:)))
+        swipe.direction = .right
+        self.view.addGestureRecognizer(swipe)
+    }
+    
+    @objc
+    private func handleSwipes(_ sender: UISwipeGestureRecognizer) {
+        dismiss(animated: true, completion: nil)
     }
 }

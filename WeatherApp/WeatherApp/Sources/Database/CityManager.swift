@@ -18,7 +18,7 @@ class CityManager {
     // MARK: - Init
     
     init() {
-        self.managedObjectContext = CoreDataManager.shared.privateObjectContext
+        self.managedObjectContext = CoreDataManager.shared.mainObjectContext
     }
     
     init(context: NSManagedObjectContext) {
@@ -27,12 +27,16 @@ class CityManager {
     
     // MARK: Helper fuctions
     
-    func fetchRequestCitiesForWeatherUpdate(completionHandler: @escaping ([City]) -> Void) {
+    func fetchRequesUpdatingCities(completionHandler: @escaping ([NSManagedObjectID]) -> Void) {
         managedObjectContext.perform {
             let request = City.prepareCitiesForUpdateRequest()
             do {
-                let result = try self.managedObjectContext.fetch(request)
-                completionHandler(result)
+                let results = try self.managedObjectContext.fetch(request)
+                var objectIds = [NSManagedObjectID]()
+                results.forEach { (city) in
+                    objectIds.append(city.objectID)
+                }
+                completionHandler(objectIds)
             } catch {
                 // error handling
                 print(error)
@@ -86,7 +90,7 @@ class CityManager {
                     do {
                         try CoreDataManager.shared.save(self.managedObjectContext)
                         DispatchQueue.global(qos: .userInitiated).async {
-                            WeatherManager.shared.update(at: city.objectID)
+                            WeatherManager.shared.update()
                         }
                     } catch {
                         print(error)

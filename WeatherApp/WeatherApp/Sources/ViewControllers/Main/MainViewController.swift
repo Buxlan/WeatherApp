@@ -27,7 +27,7 @@ class MainViewController: UIViewController {
         view.dataSource = self
         view.allowsSelection = true
         view.allowsMultipleSelection = false
-        view.allowsSelectionDuringEditing = false
+        view.allowsSelectionDuringEditing = true
         view.allowsMultipleSelectionDuringEditing = false
         view.setEditing(false, animated: false)
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -130,7 +130,7 @@ class MainViewController: UIViewController {
 
             navigationController?.navigationBar.standardAppearance = appearance
             navigationController?.navigationBar.scrollEdgeAppearance = appearance
-            //navigationController?.navigationBar.compactAppearance = appearance
+            navigationController?.navigationBar.compactAppearance = appearance
 
         } else {
             // Fallback on earlier versions
@@ -212,7 +212,17 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         tableView.deselectRow(at: indexPath, animated: true)
         let vc = DailyWeatherViewController()
         viewModel.prepareSegue(to: vc, indexPath)
+        vc.modalTransitionStyle = .crossDissolve
         navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        let deleteAction = UITableViewRowAction(style: .normal,
+                                                title: "Delete") { (_, indexPath) in
+            self.viewModel.deleteItem(at: indexPath)
+        }
+        deleteAction.backgroundColor = Asset.accent2.color
+        return [deleteAction]
     }
 }
 
@@ -230,20 +240,16 @@ extension MainViewController: Navigatable,
     }
     
     func didChangeTableViewState(new status: UserInterfaceStatus) {
-        DispatchQueue.main.async {
-            switch status {
-            case .loading:
-                self.spinner.startAnimating()
-            default:
-                self.spinner.stopAnimating()
-            }
+        switch status {
+        case .loading:
+            self.spinner.startAnimating()
+        default:
+            self.spinner.stopAnimating()
         }
     }
     
     func updateUserInterface() {
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
+        self.tableView.reloadData()
     }
     
     func prepareNavigation(viewController: UIViewController) {

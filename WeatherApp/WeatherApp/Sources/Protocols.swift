@@ -30,3 +30,19 @@ protocol ViewStateDelegate: class {
 protocol CurrentCityDelegate: class {
     func didChangeCurrentCity(new value: CityData?)
 }
+
+protocol LocationManagerDelegate: class {
+    func locationManagerDidUpdateCurrentCity(_ cityData: CityData)
+}
+
+protocol Configurable {
+    static var reuseIdentifier: String { get }
+    func configure(data: DataModel)
+}
+extension Configurable {
+    static var reuseIdentifier: String { String(describing: Self.self) }
+}
+
+protocol Dismissable: class {
+    func dismiss(animated: Bool)
+}

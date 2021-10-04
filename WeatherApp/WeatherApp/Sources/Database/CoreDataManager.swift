@@ -60,7 +60,7 @@ class CoreDataManager {
         description.shouldInferMappingModelAutomatically = true
         container.persistentStoreDescriptions = [description]
         
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+        container.loadPersistentStores(completionHandler: { (_, error) in
             if let error = error as NSError? {
                 // Replace this implementation with code to handle the error appropriately.
                 // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
@@ -107,6 +107,7 @@ class CoreDataManager {
     func save(_ context: NSManagedObjectContext) throws {
         if !context.hasChanges { return }
         if context != mainObjectContext {
+            context.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
             let notificationCenter = NotificationCenter.default
             notificationCenter.addObserver(self,
                                            selector: #selector(managedObjectContextDidSave),
@@ -120,7 +121,7 @@ class CoreDataManager {
     private func managedObjectContextDidSave(notification: Notification) {
         let context = CoreDataManager.shared.mainObjectContext
         context.perform {
-            context.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+            context.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
             context.mergeChanges(fromContextDidSave: notification)
             let notificationCenter = NotificationCenter.default
             notificationCenter.removeObserver(self, name: NSNotification.Name.NSManagedObjectContextDidSave, object: context)
@@ -132,7 +133,7 @@ class CoreDataManager {
                 
         CityDatabaseLoader().copySnapshotIfNeeded()
         
-        var failureReason = "There was an error creating or loading the application's saved data."
+        let failureReason = "There was an error creating or loading the application's saved data."
         do {
             let options = [NSMigratePersistentStoresAutomaticallyOption as NSObject: true,
                            NSInferMappingModelAutomaticallyOption as NSObject: true]

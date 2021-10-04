@@ -10,12 +10,12 @@ import UIKit
 class DoneButton: ShadowButton {
     
     init() {
-        super.init(title: "Готово", image: nil)
+        super.init(title: L10n.Controls.done, image: nil)
         configureUI()
     }
     
     required init?(coder: NSCoder) {
-        super.init(title: "Готово", image: nil)
+        super.init(title: L10n.Controls.done, image: nil)
         configureUI()
     }
     
@@ -30,4 +30,3 @@ class DoneButton: ShadowButton {
     }
     
 }
-

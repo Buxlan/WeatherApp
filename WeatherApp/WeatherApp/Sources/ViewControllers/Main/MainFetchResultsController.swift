@@ -38,9 +38,3 @@ class MainFetchResultsController: NSFetchedResultsController<City> {
     // MARK: - Helper functions
     
 }
-
-extension MainFetchResultsController: NSFetchedResultsControllerDelegate {
-    
-    
-    
-}

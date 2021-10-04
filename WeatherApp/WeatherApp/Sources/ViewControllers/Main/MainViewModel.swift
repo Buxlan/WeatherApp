@@ -39,7 +39,7 @@ class MainViewModel: NSObject {
             case true:
                 delegate?.didChangeViewState(new: .loading)
             default:
-                delegate?.didChangeTableViewState(new: .normal)
+                delegate?.didChangeViewState(new: .normal)
             }
         }
     }
@@ -131,21 +131,6 @@ class MainViewModel: NSObject {
         }
         fatalError("Section with index \(section) not found")
     }
-//        if sections.count == 1 {
-//            return SectionDataType(text: L10n.City.chosenCities,
-//                                   detailText: nil)
-//        } else {
-//            switch section {
-//            case 0:
-//                return SectionDataType(text: L10n.City.yourCityTitle,
-//                                       detailText: nil)
-//            default:
-//                return
-//                    SectionDataType(text: L10n.City.chosenCities,
-//                                           detailText: nil)
-//            }
-//        }
-//    }
     
     func itemData(at indexPath: IndexPath) -> ItemTypeData {
         transform(from: resultsController.object(at: indexPath))
@@ -166,10 +151,23 @@ class MainViewModel: NSObject {
         }
     }
     
+    func deleteItem(at indexPath: IndexPath) {
+        managedObjectContext.perform {
+            let item = self.item(at: indexPath)
+            item.isChosen = false
+            do {
+                try CoreDataManager.shared.save(self.managedObjectContext)
+            } catch {
+                print(error)
+            }
+        }
+    }
+    
     private func transform(from item: ItemType?) -> ItemTypeData {
         guard let item = item else {
             return ItemTypeData()
         }
         return ItemTypeData(city: item)
-    }
+    }    
+    
 }

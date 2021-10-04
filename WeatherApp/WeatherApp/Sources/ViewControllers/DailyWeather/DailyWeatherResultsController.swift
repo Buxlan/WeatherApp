@@ -20,16 +20,24 @@ class DailyWeatherResultsController: NSFetchedResultsController<DailyWeather> {
     
     private let request: NSFetchRequest<ItemType> = {
         let request = ItemType.prepareFetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "isCurrent", ascending: false),
-                                   NSSortDescriptor(key: "name", ascending: true)]
-        request.fetchBatchSize = 30
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        request.fetchLimit = 5
         return request
     }()
     
     private func configurePredicate() {
         var predicate: NSPredicate?
         if let item = predicateItem {
-            predicate = NSPredicate(format: "%K == %@", "city", item)
+            let currentDate = Date()
+            var dateComponents = DateComponents()
+            dateComponents.day = 5
+            let calendar = Calendar.current
+            if let date = calendar.date(byAdding: dateComponents, to: currentDate) as NSDate? {
+                predicate = NSPredicate(format: "%K == %@ AND %K > %@ AND %K < %@",
+                                        "city", item,
+                                        "date", currentDate as NSDate,
+                                        "date", date as NSDate)
+            }
         }
         self.fetchRequest.predicate = predicate
     }
@@ -39,16 +47,10 @@ class DailyWeatherResultsController: NSFetchedResultsController<DailyWeather> {
     init(context: NSManagedObjectContext) {
         super.init(fetchRequest: request,
                    managedObjectContext: context,
-                   sectionNameKeyPath: "isCurrent",
+                   sectionNameKeyPath: nil,
                    cacheName: nil)
     }
     
     // MARK: - Helper functions
-    
-}
-
-extension DailyWeatherResultsController: NSFetchedResultsControllerDelegate {
-    
-    
     
 }

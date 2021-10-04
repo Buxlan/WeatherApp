@@ -26,16 +26,16 @@ class CityDetailViewController: UIViewController {
     @IBOutlet var contentView: UIView!
     @IBOutlet var stackView: UIStackView!
     @IBOutlet var cityNameTextField: UITextField!
-    @IBOutlet var cityIdTextField: UITextField!
     @IBOutlet var longitudeTextField: UITextField!
     @IBOutlet var latitudeTextField: UITextField!
     @IBOutlet var doneButton: DoneButton!
-        
+    @IBOutlet var titleView: TitleView!
+    @IBOutlet var cancelButton: UIView!
+    
     private var managedObjectContext: NSManagedObjectContext = CoreDataManager.shared.mainObjectContext
     private var needDiscardChanges: Bool = true
     private lazy var city: City = {
         let city = City(context: self.managedObjectContext)
-        managedObjectContext.insert(city)
         city.isChosen = true
         return city
     }()    
@@ -45,6 +45,7 @@ class CityDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
+        configureGestures()
         
         // Subscribe to keyboard showing/hiding
         NotificationCenter.default.addObserver(self,
@@ -69,17 +70,21 @@ class CityDetailViewController: UIViewController {
         scrollView.backgroundColor = .white
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        titleView.translatesAutoresizingMaskIntoConstraints = false
+        titleView.configure(data: MainDataModel(text: L10n.Screens.newCity, detailText: nil))
         
         cityNameTextField.autocapitalizationType = .sentences
         cityNameTextField.autocorrectionType = .default
-        cityIdTextField.keyboardType = .decimalPad
-        longitudeTextField.keyboardType = .decimalPad
-        latitudeTextField.keyboardType = .decimalPad
+        longitudeTextField.keyboardType = .default
+        latitudeTextField.keyboardType = .default
+        
+        cityNameTextField.autocorrectionType = .no
+        longitudeTextField.autocorrectionType = .no
+        latitudeTextField.autocorrectionType = .no
         
         cityNameTextField.delegate = self
         longitudeTextField.delegate = self
         latitudeTextField.delegate = self
-        cityIdTextField.delegate = self
         configureConstraints()
     }
     
@@ -96,15 +101,16 @@ class CityDetailViewController: UIViewController {
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             
+            titleView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            titleView.widthAnchor.constraint(equalTo: contentView.widthAnchor),
+            titleView.heightAnchor.constraint(equalToConstant: 200),
+            titleView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            
             stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             stackView.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -64),
-            stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 32),
-            stackView.heightAnchor.constraint(lessThanOrEqualToConstant: 350),
-            
-            doneButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            doneButton.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor),
-            doneButton.heightAnchor.constraint(equalToConstant: 44),
-            doneButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
+            stackView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: 32),
+            stackView.heightAnchor.constraint(equalToConstant: 250),
+            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ]
         NSLayoutConstraint.activate(constraints)
     }
@@ -139,12 +145,21 @@ class CityDetailViewController: UIViewController {
             updateAppearance(for: cityNameTextField, state: .notOk)
             return
         }
-        if city.id == 0 {
-            updateAppearance(for: cityIdTextField, state: .notOk)
+        if city.coordLatitude == 0.0 {
+            updateAppearance(for: latitudeTextField, state: .notOk)
+            return
+        }
+        if city.coordLongitude == 0.0 {
+            updateAppearance(for: longitudeTextField, state: .notOk)
             return
         }
         save()
         navigationController?.popToRootViewController(animated: true)
+    }
+    
+    @IBAction func cancelHandle(_ sender: Any) {g
+        discard()
+        dismiss(animated: true, completion: nil)
     }
     
     private func updateAppearance(for textField: UITextField, state: TextFieldState) {
@@ -166,19 +181,16 @@ class CityDetailViewController: UIViewController {
                !text.isEmpty {
                 city.name = text
                 return .ok
-            }
-        case cityIdTextField:
-            if let text = textField.text,
-               !text.isEmpty,
-               let id = Int32(text) {
-                city.id = id
-                return .ok
+            } else {
+                return .notOk
             }
         case latitudeTextField:
             if let text = textField.text,
                !text.isEmpty,
                let coord = Float(text) {
                 city.coordLatitude = coord
+            } else {
+                return .notOk
             }
             return .ok
         case longitudeTextField:
@@ -186,12 +198,13 @@ class CityDetailViewController: UIViewController {
                !text.isEmpty,
                let coord = Float(text) {
                 city.coordLongitude = coord
+            } else {
+                return .notOk
             }
             return .ok
         default:
             return .notOk
         }
-        return .notOk
     }
     
     // Handling keyboard state
@@ -266,47 +279,39 @@ extension CityDetailViewController: UITextFieldDelegate {
     }
     
     func textFieldShouldEndEditing(_ textField: UITextField) -> Bool {
+        if textField == latitudeTextField || textField == longitudeTextField,
+           var text = textField.text {
+            text = text.replacingOccurrences(of: ",", with: ".")
+            textField.text = text
+        }
         let state = updateViewModel(by: textField)
         updateAppearance(for: textField, state: state)
         return true
     }
     
-    func textFieldDidEndEditing(_ textField: UITextField, reason: UITextField.DidEndEditingReason) {
-        if reason != .committed {
-            return
-        }
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         switch textField {
         case cityNameTextField:
-            cityIdTextField.becomeFirstResponder()
-        case cityIdTextField:
             latitudeTextField.becomeFirstResponder()
         case latitudeTextField:
             longitudeTextField.becomeFirstResponder()
         default:
             textField.resignFirstResponder()
         }
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        return textField.endEditing(true)
+        return true
     }
     
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
         switch textField {
-        case cityIdTextField:
-            guard CharacterSet(charactersIn: "0123456789").isSuperset(of: CharacterSet(charactersIn: string)) else {
-                return false
-            }
-            return true
         case latitudeTextField:
-            guard CharacterSet(charactersIn: "0123456789.").isSuperset(of: CharacterSet(charactersIn: string)) else {
+            guard CharacterSet(charactersIn: "0123456789.,").isSuperset(of: CharacterSet(charactersIn: string)) else {
                 return false
             }
             return true
         case longitudeTextField:
-            guard CharacterSet(charactersIn: "0123456789.").isSuperset(of: CharacterSet(charactersIn: string)) else {
+            guard CharacterSet(charactersIn: "0123456789.,").isSuperset(of: CharacterSet(charactersIn: string)) else {
                 return false
             }
             return true
@@ -315,4 +320,29 @@ extension CityDetailViewController: UITextFieldDelegate {
         }
     }
     
+}
+
+extension CityDetailViewController {
+    private func configureGestures() {
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipes(_:)))
+        swipe.direction = .right
+        self.view.addGestureRecognizer(swipe)
+    }
+    
+    @objc
+    private func handleSwipes(_ sender: UISwipeGestureRecognizer) {
+        let view = getFirstResponder(view: self.view)
+        view?.endEditing(true)
+    }
+    
+    func getFirstResponder(view: UIView) -> UIView? {
+        var result: UIView?
+        for subview in view.subviews {
+            result = subview.isFirstResponder ? subview : getFirstResponder(view: subview)
+            if result != nil {
+                return result
+            }
+        }
+        return result
+    }
 }

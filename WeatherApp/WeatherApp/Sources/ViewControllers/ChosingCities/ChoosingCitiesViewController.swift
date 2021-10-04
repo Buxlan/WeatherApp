@@ -37,29 +37,39 @@ class ChoosingCitiesViewController: UIViewController {
         
         return view
     }()
+    
     private lazy var searchResultsViewController: SearchResultsViewController = {
-        SearchResultsViewController()
+        let contoller = SearchResultsViewController()
+        contoller.delegate = self
+        return contoller
     }()
+    
     private lazy var searchController: UISearchController = {
-        let view = UISearchController(searchResultsController: searchResultsViewController)
-        view.searchResultsUpdater = searchResultsViewController
-        view.obscuresBackgroundDuringPresentation = true
-        view.searchBar.placeholder = "Найти город"
-        view.searchBar.barStyle = .default
-        view.hidesNavigationBarDuringPresentation = false
+        let controller = UISearchController(searchResultsController: searchResultsViewController)
+        controller.searchResultsUpdater = searchResultsViewController
+        controller.obscuresBackgroundDuringPresentation = true
+        controller.searchBar.placeholder = L10n.City.find
+        controller.searchBar.barStyle = .default
+        controller.hidesNavigationBarDuringPresentation = false
         
-        if let textField = view.searchBar.value(forKey: "searchField") as? UITextField {
+        if let textField = controller.searchBar.value(forKey: "searchField") as? UITextField {
             textField.backgroundColor = .white
             textField.tintColor = .white
             textField.isOpaque = true
+            guard textField.subviews.count > 0 else {
+                print("Warning: textField seach bar view has no subviews. It's very strange!")
+                return controller
+            }
+            textField.subviews[0].backgroundColor = .white
+            textField.subviews[0].tintColor = .white
         }
-        guard view.searchBar.subviews.count > 0 else {
+        guard controller.searchBar.subviews.count > 0 else {
             print("Warning: seach bar view has no subviews. It's very strange!")
-            return view
+            return controller
         }
-        view.searchBar.subviews[0].backgroundColor = Asset.accent2.color
-        view.searchBar.subviews[0].tintColor = .white
-        return view
+        controller.searchBar.subviews[0].backgroundColor = Asset.accent2.color
+        controller.searchBar.subviews[0].tintColor = .white
+        return controller
     }()
     
     private lazy var doneButton: DoneButton = {
@@ -98,17 +108,15 @@ class ChoosingCitiesViewController: UIViewController {
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        navigationItem.searchController = nil
-        navigationItem.searchController?.searchBar.setShowsCancelButton(false, animated: false)
         prepareDismiss()
         super.viewWillDisappear(animated)
     }
     
-    // MARK: Helper methods
-    
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
     }
+    
+    // MARK: Helper methods
         
     private func configureNavigationBar() {
         title = L10n.Screens.choosingCitiesTitle
@@ -123,12 +131,13 @@ class ChoosingCitiesViewController: UIViewController {
     private func configureSearchController() {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
-        searchController.searchBar.delegate = searchResultsViewController
-        searchController.searchBar.showsCancelButton = true
+        searchController.searchBar.delegate = self
+        searchController.searchBar.showsCancelButton = false
         searchController.searchBar.showsSearchResultsButton = true
         searchController.searchBar.isOpaque = true
         searchController.searchBar.barTintColor = .black
-//        searchController.searchBar.searchTextField.backgroundColor = .white
+        searchController.searchBar.tintColor = .black
+        
         definesPresentationContext = true
     }
     
@@ -169,26 +178,12 @@ class ChoosingCitiesViewController: UIViewController {
     }
     
     func prepareDismiss() {
+        navigationItem.searchController?.searchBar.isHidden = true
+        navigationItem.searchController = nil
         viewModel.delegate = nil
-        viewModel.save()
-        AppController.shared.isFirstLaunch = false
+        viewModel.save()        
         view.resignFirstResponder()
     }
-    
-    @objc
-    private func dismissTapped() {
-        prepareDismiss()
-        navigationController?.popViewController(animated: true)
-    }
-    
-    @objc func addCityHandle() {
-        let storyboard = UIStoryboard(name: "CityDetailViewController", bundle: nil)
-        if let vc = storyboard.instantiateInitialViewController() {
-            vc.modalTransitionStyle = .crossDissolve
-            navigationController?.pushViewController(vc, animated: true)
-        }
-    }
-    
 }
 
 extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSource {    
@@ -216,16 +211,10 @@ extension ChoosingCitiesViewController: UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         viewModel.selectItem(at: indexPath)
-        let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
-        cell.accessoryType = cell.isSelected ? .checkmark : .none
-        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
     
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         viewModel.selectItem(at: indexPath)
-        let cell = tableView.dequeueReusableCell(withIdentifier: CellType.reuseIdentifier, for: indexPath)
-        cell.accessoryType = cell.isSelected ? .checkmark : .none
-        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 }
 
@@ -234,7 +223,7 @@ extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Upda
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         tableView.beginUpdates()
     }
-    
+        
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
                     didChange anObject: Any,
                     at indexPath: IndexPath?,
@@ -275,5 +264,54 @@ extension ChoosingCitiesViewController: NSFetchedResultsControllerDelegate, Upda
     
     func updateUserInterface() {
         tableView.reloadData()
+    }
+}
+
+extension ChoosingCitiesViewController: UISearchBarDelegate {
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.becomeFirstResponder()
+        searchController.searchBar.setShowsCancelButton(true, animated: true)
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        if !(searchBar.text?.isEmpty ?? true) {
+            searchController.searchBar.setShowsCancelButton(false, animated: true)
+        }
+        searchBar.endEditing(true)
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.endEditing(true)
+        navigationController?.popViewController(animated: true)
+    }
+}
+
+extension SearchResultsViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        let filter = searchController.searchBar.text ?? ""
+        viewModel.update(with: filter)
+    }
+}
+
+extension ChoosingCitiesViewController {
+    @objc
+    private func dismissTapped() {
+        dismiss(animated: true)
+    }
+    
+    @objc func addCityHandle() {
+        let storyboard = UIStoryboard(name: "CityDetailViewController", bundle: nil)
+        if let vc = storyboard.instantiateInitialViewController() {
+            vc.modalPresentationStyle = .pageSheet
+            present(vc, animated: true, completion: nil)
+        }
+    }
+}
+
+extension ChoosingCitiesViewController: Dismissable {
+    func dismiss(animated: Bool) {
+        prepareDismiss()
+        navigationController?.popViewController(animated: animated)
     }
 }

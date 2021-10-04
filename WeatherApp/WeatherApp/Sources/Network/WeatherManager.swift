@@ -16,88 +16,56 @@ class WeatherManager {
     private lazy var cityManager: CityManager = {
         CityManager(context: managedObjectContext)
     }()
+    private var httpRequests = [WeatherHttpRequest]()
     private var managedObjectContext = CoreDataManager.shared.privateObjectContext
-    private lazy var completionCitiesHandler: (([City]) -> Void) = { [weak self] cities in
-        self?.update(at: cities)
+    private lazy var completionUpdatingCitiesHandler: (([NSManagedObjectID]) -> Void) = { (cities) in
+        self.update(at: cities)
     }
-    private lazy var completionWeatherDataHandler: ((City, DailyWeatherList) -> Void) = { [weak self] city, weatherList in
-        guard let self = self else {
-            return
-        }
+    private lazy var completionWeatherDataHandler: ((City, DailyWeatherList) -> Void) = { city, weatherList in
         self.managedObjectContext.perform {
             let currentWeatherData = CurrentWeatherData(temp: weatherList.current.temp)
-            let currentWeather = CurrentWeather(currentWeatherData: currentWeatherData,
+            let currentWeather = CurrentWeather(city: city,
+                                                currentWeatherData: currentWeatherData,
                                                 context: self.managedObjectContext)
             let dailyWeather = weatherList.daily.map { (data) -> DailyWeather in
                 DailyWeather(city: city, dailyWeather: data, insertInto: self.managedObjectContext)
             }
             do {
-                try CoreDataManager.shared.save(self.managedObjectContext)
+                try CoreDataManager.shared.save(self.managedObjectContext)                
             } catch {
                 print(error)
             }
         }
     }
     
-    private var timer: Timer?
     // MARK: - Init
     
-    init() {
-        
-    }
-    
-    init(updateByTimer: Bool) {
-        startTimer()
-    }
-    
-    deinit {
-        timer?.invalidate()
-        timer = nil
-    }
-        
     // MARK: - Helper methods
     
     func update() {
         // get cities
-        cityManager.fetchRequestCitiesForWeatherUpdate(completionHandler: completionCitiesHandler)
+        cityManager.fetchRequesUpdatingCities(completionHandler: completionUpdatingCitiesHandler)
     }
         
-    func update(at cities: [City]) {
+    func update(at objectIds: [NSManagedObjectID]) {
+        var cities: [City] = []
+        managedObjectContext.performAndWait {
+            objectIds.forEach { (objectId) in
+                if let city = managedObjectContext.object(with: objectId) as? City {
+                    cities.append(city)
+                }
+            }
+        }
+        update(at: cities)
+    }
+    
+    private func update(at cities: [City]) {
+        httpRequests.removeAll()
         cities.forEach { (city) in
             let weatherRequest = WeatherHttpRequest(city: city)
+            httpRequests.append(weatherRequest)
             weatherRequest.fetchRequest(completionHandler: completionWeatherDataHandler)
         }
     }
     
-}
-
-extension WeatherManager {
-    var authKey: String {
-        (Bundle.main.object(forInfoDictionaryKey: "weatherAuthKey") as? String) ?? ""
-    }
-    
-    func startTimer() {
-        guard timer == nil else { return }
-        DispatchQueue.main.async {
-            self.timer = Timer.scheduledTimer(timeInterval: 300.0,
-                                              target: self,
-                                              selector: #selector(self.timerHandle),
-                                              userInfo: nil,
-                                              repeats: true)
-        }
-    }
-
-    func stopTimer() {
-        guard timer != nil else { return }
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = nil
-        }
-    }
-    
-    @objc
-    private func timerHandle() {
-        print("update by timer")
-        update()
-    }
 }

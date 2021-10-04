@@ -27,30 +27,25 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <subviews>
                                             <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" axis="vertical" distribution="equalSpacing" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="acz-pV-rGK">
-                                                <rect key="frame" x="49" y="290" width="275" height="230"/>
+                                                <rect key="frame" x="49" y="290" width="233" height="226"/>
                                                 <subviews>
                                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Название населенного пункта" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="qAC-Vt-nuM" userLabel="City name">
-                                                        <rect key="frame" x="0.0" y="0.0" width="275" height="34"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="233" height="34"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                         <textInputTraits key="textInputTraits" returnKeyType="done"/>
                                                     </textField>
-                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Идентификатор населенного пункта" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="aVe-kc-Hek" userLabel="City ID">
-                                                        <rect key="frame" x="0.0" y="50" width="275" height="34"/>
-                                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                        <textInputTraits key="textInputTraits"/>
-                                                    </textField>
                                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Широта" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="OWo-Mz-2jO" userLabel="Latitude Text Field">
-                                                        <rect key="frame" x="0.0" y="100" width="275" height="34"/>
+                                                        <rect key="frame" x="0.0" y="50" width="233" height="34"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                         <textInputTraits key="textInputTraits" returnKeyType="done" textContentType="location"/>
                                                     </textField>
                                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Долгота" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="IHM-o5-9xU" userLabel="Longitude Text Field">
-                                                        <rect key="frame" x="0.0" y="150" width="275" height="34"/>
+                                                        <rect key="frame" x="0.0" y="100" width="233" height="34"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                         <textInputTraits key="textInputTraits" returnKeyType="done" textContentType="location"/>
                                                     </textField>
                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NrI-3w-00s" customClass="DoneButton" customModule="WeatherApp" customModuleProvider="target">
-                                                        <rect key="frame" x="0.0" y="200" width="275" height="30"/>
+                                                        <rect key="frame" x="0.0" y="150" width="233" height="30"/>
                                                         <color key="backgroundColor" name="accent2"/>
                                                         <state key="normal" title="Записать">
                                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -59,8 +54,23 @@
                                                             <action selector="saveHandle:" destination="ekT-PK-WfX" eventType="touchUpInside" id="IYz-dg-BN5"/>
                                                         </connections>
                                                     </button>
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zBY-cq-eGD">
+                                                        <rect key="frame" x="0.0" y="196" width="233" height="30"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                                        <state key="normal" title="Отмена">
+                                                            <color key="titleColor" name="other0"/>
+                                                        </state>
+                                                        <connections>
+                                                            <action selector="cancelHandle:" destination="ekT-PK-WfX" eventType="touchUpInside" id="JdG-bQ-oaU"/>
+                                                        </connections>
+                                                    </button>
                                                 </subviews>
                                             </stackView>
+                                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q2d-tU-5PP" customClass="TitleView" customModule="WeatherApp" customModuleProvider="target">
+                                                <rect key="frame" x="0.0" y="0.0" width="374" height="128"/>
+                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                            </view>
                                         </subviews>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                     </view>
@@ -73,7 +83,7 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <connections>
-                        <outlet property="cityIdTextField" destination="aVe-kc-Hek" id="4GK-v5-g1K"/>
+                        <outlet property="cancelButton" destination="zBY-cq-eGD" id="pyN-c6-f8n"/>
                         <outlet property="cityNameTextField" destination="qAC-Vt-nuM" id="OqZ-zW-8kU"/>
                         <outlet property="contentView" destination="5cv-KQ-fw6" id="5UV-tz-OO1"/>
                         <outlet property="doneButton" destination="NrI-3w-00s" id="8gm-Y5-A9a"/>
@@ -81,6 +91,7 @@
                         <outlet property="longitudeTextField" destination="IHM-o5-9xU" id="0rn-Mm-kl1"/>
                         <outlet property="scrollView" destination="2wg-zz-4Kd" id="8fX-34-vSr"/>
                         <outlet property="stackView" destination="acz-pV-rGK" id="pSV-ck-IjW"/>
+                        <outlet property="titleView" destination="Q2d-tU-5PP" id="Twu-9n-qDM"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="qsF-E5-VaZ" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -91,6 +102,9 @@
     <resources>
         <namedColor name="accent2">
             <color red="0.99599999189376831" green="0.56099998950958252" blue="0.37299999594688416" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="other0">
+            <color red="0.47099998593330383" green="0.47099998593330383" blue="0.47099998593330383" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
