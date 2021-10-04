@@ -157,7 +157,7 @@ class CityDetailViewController: UIViewController {
         navigationController?.popToRootViewController(animated: true)
     }
     
-    @IBAction func cancelHandle(_ sender: Any) {g
+    @IBAction func cancelHandle(_ sender: Any) {
         discard()
         dismiss(animated: true, completion: nil)
     }
