@@ -294,6 +294,8 @@ extension CityDetailViewController: UITextFieldDelegate {
             latitudeTextField.becomeFirstResponder()
         case latitudeTextField:
             longitudeTextField.becomeFirstResponder()
+        case longitudeTextField:
+            textField.endEditing(true)
         default:
             textField.resignFirstResponder()
         }

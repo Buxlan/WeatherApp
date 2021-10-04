@@ -1,0 +1,11 @@
+xcassets:
+- inputs:
+    - WeatherApp/Assets.xcassets
+  outputs:
+    templateName: swift5
+    output: WeatherApp/Sources/Assets.swift
+strings:
+  inputs: WeatherApp/Sources/en.lproj/Localizable.strings
+  outputs:
+    - templateName: structured-swift5
+      output: WeatherApp/Sources/Strings.swift

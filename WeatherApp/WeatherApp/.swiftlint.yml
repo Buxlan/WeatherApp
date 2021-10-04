@@ -1,0 +1,40 @@
+disabled_rules:
+- trailing_whitespace
+- unused_setter_value
+
+identifier_name:
+  severity: warning
+  min_length: 2 # only warning
+  max_length: 60 # warning
+  excluded: # excluded via string array
+    - id
+    - URL
+  validates_start_with_lowercase: true
+
+function_parameter_count:
+  warning: 7
+  error: 10
+  
+line_length:
+  warning: 150
+  error: 250
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_interpolated_strings: true
+  ignores_urls: true
+  
+type_body_length:
+  - 400 # warning
+  - 600 # error
+  
+function_body_length:
+  - 60 # warning
+  - 100 # error
+  
+type_name:
+  - 50 # warning
+  - 70 # error
+
+cyclomatic_complexity:
+  - 11 #warning
+  - 20 #error
