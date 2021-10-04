@@ -74,7 +74,5 @@ class TitleView: UIView, Configurable {
         bottomBorder.frame = CGRect(x: 0.0, y: self.bounds.size.height-1, width: self.bounds.width, height: 1.0)
         bottomBorder.backgroundColor = Asset.accent2.color.cgColor
         self.layer.addSublayer(bottomBorder)
-    }
-    
+    }    
 }
-

@@ -46,7 +46,7 @@ class ChoosingCitiesViewController: UIViewController {
     
     private lazy var searchController: UISearchController = {
         let controller = UISearchController(searchResultsController: searchResultsViewController)
-        controller.searchResultsUpdater = searchResultsViewController
+        controller.searchResultsUpdater = self
         controller.obscuresBackgroundDuringPresentation = true
         controller.searchBar.placeholder = L10n.City.find
         controller.searchBar.barStyle = .default
@@ -178,8 +178,6 @@ class ChoosingCitiesViewController: UIViewController {
     }
     
     func prepareDismiss() {
-        navigationItem.searchController?.searchBar.isHidden = true
-        navigationItem.searchController = nil
         viewModel.delegate = nil
         viewModel.save()        
         view.resignFirstResponder()
@@ -287,10 +285,10 @@ extension ChoosingCitiesViewController: UISearchBarDelegate {
     }
 }
 
-extension SearchResultsViewController: UISearchResultsUpdating {
+extension ChoosingCitiesViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         let filter = searchController.searchBar.text ?? ""
-        viewModel.update(with: filter)
+        searchResultsViewController.viewModel.update(with: filter)
     }
 }
 
@@ -310,8 +308,10 @@ extension ChoosingCitiesViewController {
 }
 
 extension ChoosingCitiesViewController: Dismissable {
+    
     func dismiss(animated: Bool) {
         prepareDismiss()
         navigationController?.popViewController(animated: animated)
     }
+    
 }

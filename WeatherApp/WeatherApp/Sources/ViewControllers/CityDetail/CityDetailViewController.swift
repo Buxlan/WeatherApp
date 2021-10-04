@@ -154,12 +154,11 @@ class CityDetailViewController: UIViewController {
             return
         }
         save()
-        navigationController?.popToRootViewController(animated: true)
+        dismiss(animated: true, completion: nil)
     }
     
     @IBAction func cancelHandle(_ sender: Any) {
-        discard()
-//        dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
     
     private func updateAppearance(for textField: UITextField, state: TextFieldState) {
@@ -332,7 +331,11 @@ extension CityDetailViewController {
     @objc
     private func handleSwipes(_ sender: UISwipeGestureRecognizer) {
         let view = getFirstResponder(view: self.view)
-        view?.endEditing(true)
+        if view != nil {
+            view?.endEditing(true)
+        } else {
+            dismiss(animated: true, completion: nil)
+        }
     }
     
     func getFirstResponder(view: UIView) -> UIView? {
