@@ -212,7 +212,7 @@ extension DailyWeatherViewController: NSFetchedResultsControllerDelegate {
 }
 
 extension DailyWeatherViewController: ViewModelStateDelegate {
-    func didChangeTableViewState(new state: UserInterfaceStatus) {
+    func didChangeTableViewState(_ state: UserInterfaceStatus) {
         DispatchQueue.main.async {
             switch state {
             case .loading:

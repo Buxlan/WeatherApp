@@ -80,7 +80,8 @@ class MainViewController: UIViewController {
         return view
     }()
     
-    // MARK: Init
+    // MARK: Life cycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         viewModel.delegate = self
@@ -108,6 +109,7 @@ class MainViewController: UIViewController {
     }
     
     // MARK: Helper methods
+    
     func configureUI() {
         view.backgroundColor = Asset.accent2.color
         view.addSubview(tableView)
@@ -230,7 +232,7 @@ extension MainViewController: Navigatable,
                               Updatable,
                               ViewModelStateDelegate,
                               ViewStateDelegate {
-    func didChangeViewState(new status: UserInterfaceStatus) {
+    func didChangeViewState(_ status: UserInterfaceStatus) {
         switch status {
         case .loading:
             self.determineLocationButton.startAnimating()
@@ -239,7 +241,7 @@ extension MainViewController: Navigatable,
         }
     }
     
-    func didChangeTableViewState(new status: UserInterfaceStatus) {
+    func didChangeTableViewState(_ status: UserInterfaceStatus) {
         switch status {
         case .loading:
             self.spinner.startAnimating()

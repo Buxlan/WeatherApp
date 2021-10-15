@@ -35,21 +35,20 @@ class MainViewModel: NSObject {
     
     private var isLocationLoading: Bool = false {
         didSet {
-            switch isLocationLoading {
-            case true:
-                delegate?.didChangeViewState(new: .loading)
-            default:
-                delegate?.didChangeViewState(new: .normal)
+            if isLocationLoading {
+                delegate?.didChangeViewState(.loading)
+            } else {
+                delegate?.didChangeViewState(.normal)
             }
         }
     }
+    
     var isViewModelLoading: Bool = false {
         didSet {
-            switch isViewModelLoading {
-            case true:
-                delegate?.didChangeTableViewState(new: .loading)
-            default:
-                delegate?.didChangeTableViewState(new: .normal)
+            if isViewModelLoading {
+                delegate?.didChangeTableViewState(.loading)
+            } else {
+                delegate?.didChangeTableViewState(.normal)
             }
         }
     }
@@ -60,11 +59,13 @@ class MainViewModel: NSObject {
         resultsController.delegate = delegate
         return resultsController
     }()
+    
     // MARK: - Init
     
     // MARK: - Helper methods
     
     private var currentCityCompletionHandler: (() -> Void)?
+    
     func performDeterminingCurrentCity() {
         if currentCityCompletionHandler != nil {
             // still searching current city
@@ -85,14 +86,14 @@ class MainViewModel: NSObject {
     }
     
     func reloadData() {
-        guard delegate != nil else {
+        guard let delegate = delegate else {
             return
         }
         managedObjectContext.perform {
             do {
                 self.isViewModelLoading = true
                 try self.resultsController.performFetch()
-                self.delegate?.updateUserInterface()
+                delegate.updateUserInterface()
                 self.isViewModelLoading = false
             } catch {
                 print(error)
@@ -112,11 +113,13 @@ class MainViewModel: NSObject {
         resultsController.sections?.count ?? 0
     }
     
+    // TODO: ??
     func sectionData(section: Int) -> SectionDataType {
         guard let sections = resultsController.sections,
               sections.count > 0 else {
             return SectionDataType(text: "", detailText: nil)
         }
+        
         if let sectionName = resultsController.sections?[section].name {
             switch sectionName {
             case "0":
@@ -133,6 +136,7 @@ class MainViewModel: NSObject {
     }
     
     func itemData(at indexPath: IndexPath) -> ItemTypeData {
+        // TODO: ??
         transform(from: resultsController.object(at: indexPath))
     }
     

@@ -13,7 +13,7 @@ class MainFetchResultsController: NSFetchedResultsController<City> {
     // MARK: - Properties
     typealias ItemType = City
     
-    private let request: NSFetchRequest<City> = {
+    private let request: NSFetchRequest<ItemType> = {
         let request = ItemType.prepareFetchRequest()
         request.predicate = NSPredicate(format: "%K == %@ OR %K == %@",
                                         "isChosen",

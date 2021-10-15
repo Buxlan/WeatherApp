@@ -20,15 +20,15 @@ protocol Navigatable: class {
 }
 
 protocol ViewModelStateDelegate: class {
-    func didChangeTableViewState(new state: UserInterfaceStatus)
+    func didChangeTableViewState(_ state: UserInterfaceStatus)
 }
 
 protocol ViewStateDelegate: class {
-    func didChangeViewState(new state: UserInterfaceStatus)
+    func didChangeViewState(_ state: UserInterfaceStatus)
 }
 
 protocol CurrentCityDelegate: class {
-    func didChangeCurrentCity(new value: CityData?)
+    func didChangeCurrentCity(_ city: CityData?)
 }
 
 protocol LocationManagerDelegate: class {

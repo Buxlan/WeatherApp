@@ -31,9 +31,9 @@ class DailyWeatherViewModel: NSObject {
         didSet {
             switch isViewModelLoading {
             case true:
-                delegate?.didChangeTableViewState(new: .loading)
+                delegate?.didChangeTableViewState(.loading)
             default:
-                delegate?.didChangeTableViewState(new: .normal)
+                delegate?.didChangeTableViewState(.normal)
             }
         }
     }
