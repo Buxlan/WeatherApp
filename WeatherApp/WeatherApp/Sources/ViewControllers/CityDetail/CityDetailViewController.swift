@@ -73,7 +73,7 @@ class CityDetailViewController: UIViewController {
         titleView.translatesAutoresizingMaskIntoConstraints = false
         titleView.configure(data: MainDataModel(text: L10n.Screens.newCity, detailText: nil))
         
-        cityNameTextField.autocapitalizationType = .sentences
+        
         cityNameTextField.autocorrectionType = .default
         longitudeTextField.keyboardType = .default
         latitudeTextField.keyboardType = .default
@@ -271,6 +271,8 @@ extension CityDetailViewController {
     }
 }
 
+// MARK: - UITextFieldDelegate
+
 extension CityDetailViewController: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -322,6 +324,8 @@ extension CityDetailViewController: UITextFieldDelegate {
     }
     
 }
+
+// MARK: - Other
 
 extension CityDetailViewController {
     private func configureGestures() {
