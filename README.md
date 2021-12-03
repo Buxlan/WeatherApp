@@ -1,5 +1,10 @@
 # WeatherApp
-for Applicatura
+
+Tech stack:
+- Network requests (API: https://openweathermap.org/)
+- CoreData with 2 context (main and private)
+- UIKit 12+
+- SwiftGen, SwiftLint
 
 Приложение написано в качестве тестового задания.
 
