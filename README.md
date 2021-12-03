@@ -5,6 +5,7 @@ Tech stack:
 - CoreData with 2 contexts (main and private)
 - UIKit 12+
 - SwiftGen, SwiftLint
+- Ru and En localizations
 
 Приложение написано в качестве тестового задания.
 
