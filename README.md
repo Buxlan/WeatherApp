@@ -28,3 +28,10 @@ for Applicatura
 Работа с геолокацией
 Нарисовать минимальный UI на базе TableView на первом экране и на экране подробного
 прогноза погоды, для добавления города просто экран с несколькими полями ввода
+
+![image](https://user-images.githubusercontent.com/5717020/144679407-d73e87c1-bdd2-4e7b-9acf-47e92f0ddf09.png)
+![image](https://user-images.githubusercontent.com/5717020/144679260-3fa8cfaa-24c0-4f8a-8d12-de6952ab4ac0.png)
+![image](https://user-images.githubusercontent.com/5717020/144679353-2af58767-1340-44ee-af7f-d542409dc38b.png)
+![image](https://user-images.githubusercontent.com/5717020/144679452-095d4bae-63a4-4b16-9477-3f8b83144b05.png)
+
+
